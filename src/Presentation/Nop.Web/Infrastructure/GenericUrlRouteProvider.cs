@@ -19,6 +19,11 @@ namespace Nop.Web.Infrastructure
         /// <param name="routeBuilder">Route builder</param>
         public void RegisterRoutes(IRouteBuilder routeBuilder)
         {
+
+            routeBuilder.MapLocalizedRoute("Static", "{*url}",
+                new { controller = "Common", action = "PageNotFound" },
+                new { url = new Routeconstraints.IsStatic() });
+
             //and default one
             routeBuilder.MapRoute("Default", "{controller}/{action}/{id?}");
 
@@ -27,25 +32,25 @@ namespace Nop.Web.Infrastructure
                 new { controller = "Common", action = "GenericUrl" });
 
             //define this routes to use in UI views (in case if you want to customize some of them later)
-            routeBuilder.MapLocalizedRoute("Product", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("Product", "{SeName}",
                 new { controller = "Product", action = "ProductDetails" });
 
-            routeBuilder.MapLocalizedRoute("Category", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("Category", "{SeName}",
                 new { controller = "Catalog", action = "Category" });
 
-            routeBuilder.MapLocalizedRoute("Manufacturer", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("Manufacturer", "{SeName}",
                 new { controller = "Catalog", action = "Manufacturer" });
 
-            routeBuilder.MapLocalizedRoute("Vendor", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("Vendor", "{SeName}",
                 new { controller = "Catalog", action = "Vendor" });
-            
-            routeBuilder.MapLocalizedRoute("NewsItem", "{SeName}", 
+
+            routeBuilder.MapLocalizedRoute("NewsItem", "{SeName}",
                 new { controller = "News", action = "NewsItem" });
 
-            routeBuilder.MapLocalizedRoute("BlogPost", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("BlogPost", "{SeName}",
                 new { controller = "Blog", action = "BlogPost" });
 
-            routeBuilder.MapLocalizedRoute("Topic", "{SeName}", 
+            routeBuilder.MapLocalizedRoute("Topic", "{SeName}",
                 new { controller = "Topic", action = "TopicDetails" });
 
             //product tags
@@ -67,5 +72,7 @@ namespace Nop.Web.Infrastructure
         }
 
         #endregion
+
+
     }
 }
