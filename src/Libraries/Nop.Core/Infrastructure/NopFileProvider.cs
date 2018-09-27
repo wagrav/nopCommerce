@@ -437,7 +437,7 @@ namespace Nop.Core.Infrastructure
         public virtual string MapPath(string path)
         {
             path = path.Replace("~/", string.Empty).TrimStart('/');
-            return Combine(BaseDirectory ?? string.Empty, path);
+            return Path.Combine(BaseDirectory ?? string.Empty, path);
         }
         
         /// <summary>
