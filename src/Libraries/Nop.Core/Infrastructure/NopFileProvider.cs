@@ -59,7 +59,7 @@ namespace Nop.Core.Infrastructure
         /// <returns>The combined paths</returns>
         public virtual string Combine(params string[] paths)
         {
-            return Path.Combine(paths);
+            return Path.Combine(paths.SelectMany(p=>p.Split('\\', '/')).ToArray());
         }
 
         /// <summary>
@@ -235,10 +235,11 @@ namespace Nop.Core.Infrastructure
         /// <returns>The absolute path to the directory</returns>
         public virtual string GetAbsolutePath(params string[] paths)
         {
-            var allPaths = paths.ToList();
-            allPaths.Insert(0, Root);
+            var allPaths = new List<string>();
+            allPaths.Add(Root);
 
-            return Path.Combine(allPaths.ToArray());
+
+            return Path.Combine(Root, Combine(paths));
         }
 
         /// <summary>
@@ -435,8 +436,8 @@ namespace Nop.Core.Infrastructure
         /// <returns>The physical path. E.g. "c:\inetpub\wwwroot\bin"</returns>
         public virtual string MapPath(string path)
         {
-            path = path.Replace("~/", string.Empty).TrimStart('/').Replace('/', '\\');
-            return Path.Combine(BaseDirectory ?? string.Empty, path);
+            path = path.Replace("~/", string.Empty).TrimStart('/');
+            return Combine(BaseDirectory ?? string.Empty, path);
         }
         
         /// <summary>
