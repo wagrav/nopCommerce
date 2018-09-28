@@ -59,7 +59,13 @@ namespace Nop.Core.Infrastructure
         /// <returns>The combined paths</returns>
         public virtual string Combine(params string[] paths)
         {
-            return Path.Combine(paths.SelectMany(p=>p.Split('\\', '/')).ToArray());
+            var path = Path.Combine(paths.SelectMany(p=>p.Split('\\', '/')).ToArray());
+
+            if (path.Contains('/'))
+            {
+                path = "/" + path;
+            }
+            return path;
         }
 
         /// <summary>
@@ -237,9 +243,9 @@ namespace Nop.Core.Infrastructure
         {
             var allPaths = new List<string>();
             allPaths.Add(Root);
+            allPaths.AddRange(paths);
 
-
-            return Path.Combine(Root, Combine(paths));
+            return Combine(allPaths.ToArray());
         }
 
         /// <summary>
