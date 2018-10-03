@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Nop.Core.Data;
@@ -13,6 +14,7 @@ namespace Nop.Web.Framework.Security
     /// </summary>
     public static class FilePermissionHelper
     {
+
         /// <summary>
         /// Check permissions
         /// </summary>
@@ -24,6 +26,30 @@ namespace Nop.Web.Framework.Security
         /// <returns>Result</returns>
         public static bool CheckPermissions(string path, bool checkRead, bool checkWrite, bool checkModify, bool checkDelete)
         {
+            if (Environment.OSVersion.Platform == System.PlatformID.Win32NT)
+            {
+                return CheckPermissionsInWindows(path, checkRead, checkWrite, checkModify, checkDelete);
+            }
+
+            if (Environment.OSVersion.Platform == System.PlatformID.Unix)
+            {
+                return CheckPermissionsInUnix(path, checkRead, checkWrite, checkModify, checkDelete);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check permissions
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <param name="checkRead">Check read</param>
+        /// <param name="checkWrite">Check write</param>
+        /// <param name="checkModify">Check modify</param>
+        /// <param name="checkDelete">Check delete</param>
+        /// <returns>Result</returns>
+        public static bool CheckPermissionsInWindows(string path, bool checkRead, bool checkWrite, bool checkModify, bool checkDelete)
+        {
             var flag = false;
             var flag2 = false;
             var flag3 = false;
@@ -32,6 +58,7 @@ namespace Nop.Web.Framework.Security
             var flag6 = false;
             var flag7 = false;
             var flag8 = false;
+
             var current = WindowsIdentity.GetCurrent();
             AuthorizationRuleCollection rules;
             try
@@ -150,6 +177,119 @@ namespace Nop.Web.Framework.Security
         }
 
         /// <summary>
+        /// Check permissions
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <param name="checkRead">Check read</param>
+        /// <param name="checkWrite">Check write</param>
+        /// <param name="checkModify">Check modify</param>
+        /// <param name="checkDelete">Check delete</param>
+        /// <returns>Result</returns>
+        public static bool CheckPermissionsInUnix(string path, bool checkRead, bool checkWrite, bool checkModify, bool checkDelete)
+        {
+            //read permissions
+            int[] r = new int[]{5, 6, 7};
+
+            //write permissions
+            int[] w = new int[]{2, 3, 6, 7};
+
+            var res = "";
+            var linuxUserId = "";
+            var linuxUserGroupIds = "";
+            var linuxFilePermissions = new int[3];
+            var linuxFileOwner = "";
+            var linuxFileGroup = "";
+
+            try
+            {
+                //Create bash command like
+                //sh -c " id -u ; id -G ; stat -c '%a %u %g' <file>"
+                //Result
+                //1000                          - user ID
+                //1000 4 24 27 30 46 116 126    - user groups
+                //555 1000 1000                 - file permissions (555) | file owner ID (1000) | file group ID (1000)
+
+                var arg = "-c \" id -u ; id -G ; stat -c '%a %u %g' " + path + "  \"";
+                var _p = new System.Diagnostics.Process();
+                _p.StartInfo.RedirectStandardInput = true;
+                _p.StartInfo.RedirectStandardOutput = true;
+                _p.StartInfo.UseShellExecute = false;
+                _p.StartInfo.FileName = "sh";
+                _p.StartInfo.Arguments = arg;
+                _p.Start();
+                _p.WaitForExit();
+                res = _p.StandardOutput.ReadToEnd();
+
+                var respars = res.Split("\n");
+                linuxUserId = respars[0];
+                linuxUserGroupIds = respars[1];
+
+                var tmp = respars[2].Split(' ');
+                linuxFilePermissions[0] = (int)Char.GetNumericValue(tmp[0][0]);
+                linuxFilePermissions[1] = (int)Char.GetNumericValue(tmp[0][1]);
+                linuxFilePermissions[2] = (int)Char.GetNumericValue(tmp[0][2]);
+                linuxFileOwner = tmp[1];
+                linuxFileGroup = tmp[2];
+            }
+            catch (System.Exception ex )
+            {
+                return true;
+            }
+            try
+            {
+                // if user is owner of file
+                if (linuxUserId ==linuxFileOwner)
+                {
+                    if (checkRead & r.Contains(linuxFilePermissions[0]) )
+                    {
+                        return true;
+                    }
+
+                    if ((checkWrite || checkModify || checkDelete) & w.Contains(linuxFilePermissions[0]))
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+                // if user is in same group as file
+                if (linuxUserGroupIds.Contains(linuxFileGroup))
+                {
+                    if (checkRead & r.Contains(linuxFilePermissions[1]) )
+                    {
+                        return true;
+                    }
+
+                    if ((checkWrite || checkModify || checkDelete) &  w.Contains(linuxFilePermissions[1]))
+                    {
+                        return true;
+                    }
+
+                    return false;
+
+                }
+                else // checking permissions for other
+                {
+                    if (checkRead & r.Contains(linuxFilePermissions[2]) )
+                    {
+                        return true;
+                    }
+
+                    if ((checkWrite || checkModify || checkDelete) &  w.Contains(linuxFilePermissions[2]))
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
+            catch (System.IO.IOException)
+            {
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Gets a list of directories (physical paths) which require write permission
         /// </summary>
         /// <returns>Result</returns>
@@ -158,7 +298,7 @@ namespace Nop.Web.Framework.Security
             var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
 
             var rootDir = fileProvider.MapPath("~/");
-            
+
             var dirsToCheck = new List<string>
             {
                 fileProvider.Combine(rootDir, "App_Data"),
@@ -173,7 +313,7 @@ namespace Nop.Web.Framework.Security
                 fileProvider.Combine(rootDir, "wwwroot\\images\\thumbs"),
                 fileProvider.Combine(rootDir, "wwwroot\\images\\uploaded")
             };
-            
+
             return dirsToCheck;
         }
 
