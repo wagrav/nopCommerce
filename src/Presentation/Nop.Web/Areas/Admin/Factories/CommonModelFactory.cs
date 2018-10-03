@@ -479,7 +479,7 @@ namespace Nop.Web.Areas.Admin.Factories
                 {
                     Level = SystemWarningLevel.Warning,
                     Text = string.Format(_localizationService.GetResource("Admin.System.Warnings.DirectoryPermission.Wrong"),
-                        WindowsIdentity.GetCurrent().Name, dir)
+                        CommonHelper.CurrentUserName, dir)
                 });
                 dirPermissionsOk = false;
             }
@@ -504,7 +504,7 @@ namespace Nop.Web.Areas.Admin.Factories
                 {
                     Level = SystemWarningLevel.Warning,
                     Text = string.Format(_localizationService.GetResource("Admin.System.Warnings.FilePermission.Wrong"),
-                        WindowsIdentity.GetCurrent().Name, file)
+                        CommonHelper.CurrentUserName, file)
                 });
                 filePermissionsOk = false;
             }

@@ -281,13 +281,12 @@ namespace Nop.Web.Controllers
             var dirsToCheck = FilePermissionHelper.GetDirectoriesWrite();
             foreach (var dir in dirsToCheck)
                 if (!FilePermissionHelper.CheckPermissions(dir, false, true, true, false))
-                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureDirectoryPermissions"), WindowsIdentity.GetCurrent().Name, dir));
+                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureDirectoryPermissions"), CommonHelper.CurrentUserName, dir));
 
             var filesToCheck = FilePermissionHelper.GetFilesWrite();
             foreach (var file in filesToCheck)
                 if (!FilePermissionHelper.CheckPermissions(file, false, true, true, true))
-                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureFilePermissions"), WindowsIdentity.GetCurrent().Name, file));
-
+                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureFilePermissions"), CommonHelper.CurrentUserName, file));
             if (ModelState.IsValid)
             {
                 try

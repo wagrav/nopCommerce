@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 using Nop.Core.Infrastructure;
 
@@ -22,6 +23,7 @@ namespace Nop.Core
         private const string _emailExpression = @"^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-||_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+([a-z]+|\d|-|\.{0,1}|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])?([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))$";
 
         private static readonly Regex _emailRegex;
+        private static readonly string _currentUserName;
 
         #endregion
 
@@ -30,6 +32,31 @@ namespace Nop.Core
         static CommonHelper()
         {
             _emailRegex = new Regex(_emailExpression, RegexOptions.IgnoreCase);
+
+            try
+            {
+                if (System.Environment.OSVersion.Platform == System.PlatformID.Win32NT)
+                {
+                    _currentUserName = WindowsIdentity.GetCurrent().Name;
+                }
+
+                if (System.Environment.OSVersion.Platform == System.PlatformID.Unix)
+                {
+                    var _p = new System.Diagnostics.Process();
+                    _p.StartInfo.RedirectStandardInput = true;
+                    _p.StartInfo.RedirectStandardOutput = true;
+                    _p.StartInfo.UseShellExecute = false;
+                    _p.StartInfo.FileName = "id";
+                    _p.StartInfo.Arguments = "-un";
+                    _p.Start();
+                    _p.WaitForExit();
+                    _currentUserName = _p.StandardOutput.ReadToEnd().Trim('\n');
+                }
+            }
+            catch
+            {
+                _currentUserName = "Unknown";
+            }
         }
 
         #endregion
@@ -356,6 +383,7 @@ namespace Nop.Core
         /// Gets or sets the default file provider
         /// </summary>
         public static INopFileProvider DefaultFileProvider { get; set; }
+        public static string CurrentUserName => _currentUserName;
 
         #endregion
     }
