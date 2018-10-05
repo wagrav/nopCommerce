@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
@@ -281,12 +282,17 @@ namespace Nop.Web.Controllers
             var dirsToCheck = FilePermissionHelper.GetDirectoriesWrite();
             foreach (var dir in dirsToCheck)
                 if (!FilePermissionHelper.CheckPermissions(dir, false, true, true, false))
-                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureDirectoryPermissions"), CommonHelper.CurrentUserName, dir));
+                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureDirectoryPermissions"), CurrentOSUser.FullName, dir));
 
             var filesToCheck = FilePermissionHelper.GetFilesWrite();
             foreach (var file in filesToCheck)
+            {
+                if (!System.IO.File.Exists(file))
+                    continue;
+
                 if (!FilePermissionHelper.CheckPermissions(file, false, true, true, true))
-                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureFilePermissions"), CommonHelper.CurrentUserName, file));
+                    ModelState.AddModelError("", string.Format(_locService.GetResource("ConfigureFilePermissions"), CurrentOSUser.FullName, file));
+            }
             if (ModelState.IsValid)
             {
                 try

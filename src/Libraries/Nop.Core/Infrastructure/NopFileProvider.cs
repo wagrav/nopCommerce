@@ -87,12 +87,15 @@ namespace Nop.Core.Infrastructure
             if (FileExists(path))
                 return;
 
+            var fi = new FileInfo(path);
+            CreateDirectory(fi.DirectoryName);
+
             //we use 'using' to close the file after it's created
             using (File.Create(path))
             {
             }
         }
-        
+
         /// <summary>
         ///  Depth-first recursive delete, with handling for descendant directories open in Windows Explorer.
         /// </summary>
