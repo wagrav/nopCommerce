@@ -159,7 +159,13 @@
             @T("Admin.Catalog.Products.ProductAttributes.AttributeCombinations.GenerateSeveral")
         </button>
         <input type="submit" id="btnRefreshCombinations" style="display: none" />
-        <script type="text/javascript">
+
+       
+
+        @await Html.PartialAsync("_script")        
+
+
+        @*<script type="text/javascript">
             $(document).ready(function() {
                 $('#btnRefreshCombinations').click(function() {
                     //refresh grid
@@ -195,7 +201,7 @@
                     return false;
                 });
             });
-        </script>
+        </script>*@
     </div>
 </div>
 @await Component.InvokeAsync("AdminWidget", new { widgetZone = AdminWidgetZones.ProductDetailsProductAttributesCombinationsBottom, additionalData = Model })

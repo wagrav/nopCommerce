@@ -1,0 +1,37 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#btnRefreshCombinations').click(function() {
+            //refresh grid
+            var grid = $("#attributecombinations-grid").data('kendoGrid');
+            grid.dataSource.read();
+
+            //return false to don't reload a page
+            return false;
+        });
+
+        //generate combinations new
+        $("#btnGenerateAllCombinations-action-confirmation-submit-button").bind("click", function () {
+            var postData = {
+
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: '@Url.Action("GenerateAllAttributeCombinations", "Product", new { productId = Model.Id })',
+                data: postData,
+                dataType: 'json',
+                complete: function (data) {
+                    //reload grid
+                    var grid = $('#attributecombinations-grid').data('kendoGrid');
+                    grid.dataSource.read();
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    $("#generateAllAttributeCombinationsAlert").click();
+                }
+            });
+            $('#btnGenerateAllCombinations-action-confirmation').modal('toggle');
+            return false;
+        });
+    });
+</script>
