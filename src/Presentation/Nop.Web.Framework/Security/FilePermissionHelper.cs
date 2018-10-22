@@ -16,7 +16,6 @@ namespace Nop.Web.Framework.Security
     /// </summary>
     public static class FilePermissionHelper
     {
-
         /// <summary>
         /// Check permissions
         /// </summary>
@@ -28,23 +27,19 @@ namespace Nop.Web.Framework.Security
         /// <returns>Result</returns>
         public static bool CheckPermissions(string path, bool checkRead, bool checkWrite, bool checkModify, bool checkDelete)
         {
-            if (Environment.OSVersion.Platform == System.PlatformID.Win32NT)
+            var result = false;
+
+            switch (Environment.OSVersion.Platform)
             {
-                if (
-                    ((Path.GetExtension(path) == "") & !Directory.Exists(path))  ||
-                    ((Path.GetExtension(path) != "") & !File.Exists(path))
-                   )
-                {
-                    return true;
-                }
-                return CheckPermissionsInWindows(path, checkRead, checkWrite, checkModify, checkDelete);
+                    case PlatformID.Win32NT:
+                        result = CheckPermissionsInWindows(path, checkRead, checkWrite, checkModify, checkDelete);
+                        break;
+                    case PlatformID.Unix:
+                        result = CheckPermissionsInUnix(path, checkRead, checkWrite, checkModify, checkDelete);
+                        break;
             }
 
-            if (Environment.OSVersion.Platform == System.PlatformID.Unix)
-            {
-                return CheckPermissionsInUnix(path, checkRead, checkWrite, checkModify, checkDelete);
-            }
-            return false;
+            return result;
         }
 
         private static void CheckAccessRule(FileSystemAccessRule rule, ref bool deleteIsDeny, ref bool modifyIsDeny,
@@ -103,6 +98,13 @@ namespace Nop.Web.Framework.Security
 
             try
             {
+                var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
+
+                if (!(fileProvider.FileExists(path) || fileProvider.DirectoryExists(path)))
+                {
+                    return true;
+                }
+
                 var current = WindowsIdentity.GetCurrent();
 
                 var readIsDeny = false;
@@ -114,8 +116,7 @@ namespace Nop.Web.Framework.Security
                 var writeIsAllow = false;
                 var modifyIsAllow = false;
                 var deleteIsAllow = false;
-
-                var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
+                
                 var rules = fileProvider.GetAccessControl(path).GetAccessRules(true, true, typeof(SecurityIdentifier))
                     .Cast<FileSystemAccessRule>()
                     .ToList();
@@ -153,7 +154,7 @@ namespace Nop.Web.Framework.Security
                 if (checkDelete)
                     permissionsAreGranted = permissionsAreGranted && deleteIsAllow;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 return false;
             }
@@ -177,10 +178,10 @@ namespace Nop.Web.Framework.Security
         private static bool CheckPermissionsInUnix(string path, bool checkRead, bool checkWrite, bool checkModify, bool checkDelete)
         {
             //read permissions
-            int[] r = new int[] {5, 6, 7};
+            int[] r = { 5, 6, 7 };
 
             //write permissions
-            int[] w = new int[] {2, 3, 6, 7};
+            int[] w = { 2, 3, 6, 7 };
 
             try
             {
@@ -191,8 +192,10 @@ namespace Nop.Web.Framework.Security
 
                 var arg = "-c \" stat -c '%a %u %g' " + path + "  \"";
 
-                var _p = new Process{
-                    StartInfo = new ProcessStartInfo{
+                var process = new Process 
+                {
+                    StartInfo = new ProcessStartInfo 
+                    {
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
                         UseShellExecute = false,
@@ -200,16 +203,18 @@ namespace Nop.Web.Framework.Security
                         Arguments = arg
                     }
                 };
-                _p.Start();
-                _p.WaitForExit();
-                var res = _p.StandardOutput.ReadToEnd();
+                process.Start();
+                process.WaitForExit();
+                var res = process.StandardOutput.ReadToEnd();
 
                 var respars = res.Trim('\n').Split(' ');
 
-                var linuxFilePermissions = new int[] {
+                var linuxFilePermissions = new[] 
+                {
                     (int)char.GetNumericValue(respars[0][0]),
                     (int)char.GetNumericValue(respars[0][1]),
-                    (int)char.GetNumericValue(respars[0][2])};
+                    (int)char.GetNumericValue(respars[0][2])
+                };
 
                 var linuxFileOwnerId = respars[1];
                 var linuxFileGroup = respars[2];
@@ -217,7 +222,7 @@ namespace Nop.Web.Framework.Security
                 // if user is owner of file
                 if (CurrentOSUser.UserId == linuxFileOwnerId)
                 {
-                    if (checkRead & r.Contains(linuxFilePermissions[0]) )
+                    if (checkRead & r.Contains(linuxFilePermissions[0]))
                     {
                         return true;
                     }
@@ -226,32 +231,37 @@ namespace Nop.Web.Framework.Security
                     {
                         return true;
                     }
+
                     return false;
                 }
+
                 // if user is in same group as file
                 if (CurrentOSUser.Groups.Contains(linuxFileGroup))
                 {
-                    if (checkRead & r.Contains(linuxFilePermissions[1]) )
+                    if (checkRead & r.Contains(linuxFilePermissions[1]))
                     {
                         return true;
                     }
 
-                    if ((checkWrite || checkModify || checkDelete) &  w.Contains(linuxFilePermissions[1]))
+                    if ((checkWrite || checkModify || checkDelete) & w.Contains(linuxFilePermissions[1]))
                     {
                         return true;
                     }
+
                     return false;
                 }
+
                 // checking permissions for other
-                if (checkRead & r.Contains(linuxFilePermissions[2]) )
+                if (checkRead & r.Contains(linuxFilePermissions[2]))
                 {
                     return true;
                 }
 
-                if ((checkWrite || checkModify || checkDelete) &  w.Contains(linuxFilePermissions[2]))
+                if ((checkWrite || checkModify || checkDelete) & w.Contains(linuxFilePermissions[2]))
                 {
                     return true;
                 }
+
                 return false;
             }
             catch
