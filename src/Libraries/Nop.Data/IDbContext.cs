@@ -64,6 +64,35 @@ namespace Nop.Data
         /// <param name="entity">Entity</param>
         void Detach<TEntity>(TEntity entity) where TEntity : BaseEntity;
 
+        /// <summary>
+        /// Drop table
+        /// </summary>
+        /// <param name="tableName"> Table name</param>
+        void DropTable(string tableName);
+
+        /// <summary>
+        /// Checks if the specified table in database exists, returns true if table exists
+        /// </summary>
+        ////// <param name="tableName"> Table name</param>
+        /// <returns>Returns true if the table exists.</returns>
+        bool TableExists(string tableName);
+
+
+        /// <summary>
+        /// Execute commands from the SQL script against the context database
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="sql">SQL script</param>
+        void ExecuteSqlScript(string sql);
+
+        /// <summary>
+        /// Execute commands from a file with SQL script against the context database
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="filePath">Path to the file</param>
+        void ExecuteSqlScriptFromFile(string filePath);
+
+
         #endregion
     }
 }

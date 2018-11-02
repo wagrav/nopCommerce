@@ -5136,6 +5136,9 @@
   <LocaleResource Name="Admin.Configuration.Plugins.OfficialFeed.Version.Hint">
     <Value>Search by version.</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.ProviderIsUsed">
+    <Value>This provider is currently used.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Plugins.ReloadList">
     <Value>Reload list of plugins</Value>
   </LocaleResource>

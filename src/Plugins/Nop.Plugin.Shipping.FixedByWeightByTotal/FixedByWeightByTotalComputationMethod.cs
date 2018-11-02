@@ -2,8 +2,11 @@
 using System.Linq;
 using Nop.Core;
 using Nop.Core.Domain.Shipping;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Plugin.Shipping.FixedByWeightByTotal.Data;
+using Nop.Plugin.Shipping.FixedByWeightByTotal.Domain;
 using Nop.Plugin.Shipping.FixedByWeightByTotal.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
@@ -21,6 +24,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
         #region Fields
 
         private readonly FixedByWeightByTotalSettings _fixedByWeightByTotalSettings;
+        private readonly IDbContext _dbContext;
         private readonly ILocalizationService _localizationService;
         private readonly IPriceCalculationService _priceCalculationService;
         private readonly ISettingService _settingService;
@@ -28,23 +32,23 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
         private readonly IShippingService _shippingService;
         private readonly IStoreContext _storeContext;
         private readonly IWebHelper _webHelper;
-        private readonly ShippingByWeightByTotalObjectContext _objectContext;
 
         #endregion
 
         #region Ctor
 
         public FixedByWeightByTotalComputationMethod(FixedByWeightByTotalSettings fixedByWeightByTotalSettings,
+            IDbContext dbContext,
             ILocalizationService localizationService,
             IPriceCalculationService priceCalculationService,
             ISettingService settingService,
             IShippingByWeightByTotalService shippingByWeightByTotalService,
             IShippingService shippingService,
             IStoreContext storeContext,
-            IWebHelper webHelper,
-            ShippingByWeightByTotalObjectContext objectContext)
+            IWebHelper webHelper)
         {
             this._fixedByWeightByTotalSettings = fixedByWeightByTotalSettings;
+            this._dbContext = dbContext;
             this._localizationService = localizationService;
             this._priceCalculationService = priceCalculationService;
             this._settingService = settingService;
@@ -52,7 +56,6 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
             this._shippingService = shippingService;
             this._storeContext = storeContext;
             this._webHelper = webHelper;
-            this._objectContext = objectContext;
         }
 
         #endregion
@@ -235,8 +238,16 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
             //settings
             _settingService.SaveSetting(new FixedByWeightByTotalSettings());
 
-            //database objects
-            _objectContext.Install();
+
+            if (!_dbContext.TableExists(nameof(ShippingByWeightByTotalRecord)))
+            {
+                var builder = EngineContext.Current.Resolve<IDbContextOptionsBuilderHelper>();
+                var _objectContext = new ShippingByWeightByTotalObjectContext(builder);
+                var str = _objectContext.GenerateCreateScript();
+                _dbContext.ExecuteSqlScript(str);
+
+                _dbContext.SaveChanges();
+            }
 
             //locales
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Shipping.FixedByWeightByTotal.AddRecord", "Add record");
@@ -296,7 +307,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
             _settingService.DeleteSettings(fixedRates);
 
             //database objects
-            _objectContext.Uninstall();
+            _dbContext.DropTable(nameof(ShippingByWeightByTotalRecord));
 
             //locales
             _localizationService.DeletePluginLocaleResource("Plugins.Shipping.FixedByWeightByTotal.AddRecord");
@@ -347,10 +358,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
         /// <summary>
         /// Gets a shipping rate computation method type
         /// </summary>
-        public ShippingRateComputationMethodType ShippingRateComputationMethodType
-        {
-            get { return ShippingRateComputationMethodType.Offline; }
-        }
+        public ShippingRateComputationMethodType ShippingRateComputationMethodType => ShippingRateComputationMethodType.Offline;
 
         /// <summary>
         /// Gets a shipment tracker

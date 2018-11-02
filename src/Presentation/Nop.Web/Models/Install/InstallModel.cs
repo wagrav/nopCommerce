@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using FluentValidation.Attributes;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Data;
+using Nop.Data;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 using Nop.Web.Validators.Install;
@@ -10,7 +11,7 @@ using Nop.Web.Validators.Install;
 namespace Nop.Web.Models.Install
 {
     [Validator(typeof(InstallValidator))]
-    public partial class InstallModel : BaseNopModel
+    public partial class InstallModel : BaseNopModel, IDbPluginInstallModel
     {
         public InstallModel()
         {
@@ -26,15 +27,17 @@ namespace Nop.Web.Models.Install
         public string ConfirmPassword { get; set; }
 
         public string DatabaseConnectionString { get; set; }
-        public DataProviderType DataProvider { get; set; }
+        public string DataProvider { get; set; }
         //SQL Server properties
         public string SqlConnectionInfo { get; set; }
 
         public string SqlServerName { get; set; }
+        public int SqlServerPort { get; set; }
         public string SqlDatabaseName { get; set; }
         public string SqlServerUsername { get; set; }
         [DataType(DataType.Password)]
         public string SqlServerPassword { get; set; }
+
         public string SqlAuthenticationType { get; set; }
         public bool SqlServerCreateDatabase { get; set; }
 
@@ -44,5 +47,7 @@ namespace Nop.Web.Models.Install
         public bool DisableSampleDataOption { get; set; }
         public bool InstallSampleData { get; set; }
         public List<SelectListItem> AvailableLanguages { get; set; }
+
+        public List<IDbPlugin> DbPlugins { get; set; }
     }
 }

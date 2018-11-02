@@ -2,15 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
-using Nop.Plugin.Shipping.FixedByWeightByTotal.Data;
-using Nop.Web.Framework.Infrastructure.Extensions;
 
-namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Infrastructure
+namespace Nop.Plugin.Data.PostgreSQL.Infrastructure
 {
-    /// <summary>
-    /// Represents object for the configuring plugin DB context on application startup
-    /// </summary>
-    public class PluginDbStartup : INopStartup
+    public class Startup : INopStartup
     {
         /// <summary>
         /// Add and configure any of the middleware
@@ -19,11 +14,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Infrastructure
         /// <param name="configuration">Configuration of the application</param>
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
-            //add object context
-            services.AddDbContext<ShippingByWeightByTotalObjectContext>(optionsBuilder =>
-            {
-                optionsBuilder.UseSqlServerWithLazyLoading(services);
-            });
+            services.AddEntityFrameworkNpgsql();
         }
 
         /// <summary>
@@ -35,7 +26,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Infrastructure
         }
 
         /// <summary>
-        /// Gets order of this startup configuration implementation
+        /// After the NopDbStartup startup.
         /// </summary>
         public int Order => 11;
     }

@@ -371,9 +371,10 @@ namespace Nop.Services.Customers
 
             var query = from c in _customerRepository.Table
                         orderby c.Id
-                        where c.Email == email
+                        where c.Email == email.ToLower()
                         select c;
             var customer = query.FirstOrDefault();
+
             return customer;
         }
 
@@ -1047,7 +1048,7 @@ namespace Nop.Services.Customers
 
             //filter by password format
             if (passwordFormat.HasValue)
-                query = query.Where(password => password.PasswordFormatId == (int)passwordFormat.Value);
+                query = query.Where(password => password.PasswordFormatId == Convert.ToInt32(passwordFormat.Value));
 
             //get the latest passwords
             if (passwordsToReturn.HasValue)

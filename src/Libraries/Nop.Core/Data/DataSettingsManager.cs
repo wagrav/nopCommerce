@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Nop.Core.Infrastructure;
@@ -14,6 +15,7 @@ namespace Nop.Core.Data
         #region Fields
 
         private static bool? _databaseIsInstalled;
+        private static Type _dataProviderType;
 
         #endregion
 
@@ -59,7 +61,7 @@ namespace Nop.Core.Data
                         switch (key)
                         {
                             case "DataProvider":
-                                dataSettings.DataProvider = Enum.TryParse(value, true, out DataProviderType providerType) ? providerType : DataProviderType.Unknown;
+                                dataSettings.DataProvider = value;
                                 continue;
                             case "DataConnectionString":
                                 dataSettings.DataConnectionString = value;
@@ -134,6 +136,36 @@ namespace Nop.Core.Data
                     _databaseIsInstalled = !string.IsNullOrEmpty(LoadSettings(reloadSettings: true)?.DataConnectionString);
 
                 return _databaseIsInstalled.Value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the type of current data provider 
+        /// </summary>
+        public static Type DataProviderType
+        {
+            get
+            {
+                if (_dataProviderType != null)
+                    return _dataProviderType;
+
+                //get current provider type from DataSettings
+                var providerName = LoadSettings()?.DataProvider;
+
+                if (string.IsNullOrWhiteSpace(providerName))
+                    return null;
+
+                var typeFinder = new WebAppTypeFinder();
+                var provider = typeFinder.FindClassesOfType<IDataProvider>()
+                    .Select(providerType => (IDataProvider)Activator.CreateInstance(providerType))
+                    .FirstOrDefault(p => p.DataProviderName.Equals(providerName, StringComparison.CurrentCultureIgnoreCase));
+                    
+                if (provider == null)
+                    throw new NopException($"Not supported data provider name: '{providerName}'");
+
+                _dataProviderType = provider.GetType();
+
+                return _dataProviderType;
             }
         }
 

@@ -1,10 +1,14 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core;
+using Nop.Core.Data;
+using Nop.Core.Infrastructure;
+using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data.Mapping;
 
 namespace Nop.Data
@@ -41,7 +45,16 @@ namespace Nop.Data
                 var configuration = (IMappingConfiguration)Activator.CreateInstance(typeConfiguration);
                 configuration.ApplyConfiguration(modelBuilder);
             }
-            
+
+            var typeFinder = new WebAppTypeFinder();
+            var dbModels = typeFinder.FindClassesOfType<IDbModelRegistrar>();
+
+            foreach (var dbModel in dbModels)
+            {
+                var configuration = (IDbModelRegistrar)Activator.CreateInstance(dbModel);
+                configuration.ModelCreating(modelBuilder);
+            }
+
             base.OnModelCreating(modelBuilder);
         }
 
@@ -53,8 +66,11 @@ namespace Nop.Data
         /// <returns>Modified raw SQL query</returns>
         protected virtual string CreateSqlWithParameters(string sql, params object[] parameters)
         {
+            if (parameters == null)
+                return sql;
+
             //add parameters to sql
-            for (var i = 0; i <= (parameters?.Length ?? 0) - 1; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
                 if (!(parameters[i] is DbParameter parameter))
                     continue;
@@ -89,7 +105,7 @@ namespace Nop.Data
         /// <returns>A SQL script</returns>
         public virtual string GenerateCreateScript()
         {
-            return this.Database.GenerateCreateScript();
+            return Database.GenerateCreateScript();
         }
 
         /// <summary>
@@ -100,7 +116,7 @@ namespace Nop.Data
         /// <returns>An IQueryable representing the raw SQL query</returns>
         public virtual IQueryable<TQuery> QueryFromSql<TQuery>(string sql) where TQuery : class
         {
-            return this.Query<TQuery>().FromSql(sql);
+            return Query<TQuery>().FromSql(sql);
         }
         
         /// <summary>
@@ -112,7 +128,7 @@ namespace Nop.Data
         /// <returns>An IQueryable representing the raw SQL query</returns>
         public virtual IQueryable<TEntity> EntityFromSql<TEntity>(string sql, params object[] parameters) where TEntity : BaseEntity
         {
-            return this.Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
+            return Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
         }
 
         /// <summary>
@@ -126,24 +142,24 @@ namespace Nop.Data
         public virtual int ExecuteSqlCommand(RawSqlString sql, bool doNotEnsureTransaction = false, int? timeout = null, params object[] parameters)
         {
             //set specific command timeout
-            var previousTimeout = this.Database.GetCommandTimeout();
-            this.Database.SetCommandTimeout(timeout);
+            var previousTimeout = Database.GetCommandTimeout();
+            Database.SetCommandTimeout(timeout);
 
-            var result = 0;
+            int result;
             if (!doNotEnsureTransaction)
             {
                 //use with transaction
-                using (var transaction = this.Database.BeginTransaction())
+                using (var transaction = Database.BeginTransaction())
                 {
-                    result = this.Database.ExecuteSqlCommand(sql, parameters);
+                    result = Database.ExecuteSqlCommand(sql, parameters);
                     transaction.Commit();
                 }
             }
             else
-                result = this.Database.ExecuteSqlCommand(sql, parameters);
+                result = Database.ExecuteSqlCommand(sql, parameters);
             
             //return previous timeout back
-            this.Database.SetCommandTimeout(previousTimeout);
+            Database.SetCommandTimeout(previousTimeout);
             
             return result;
         }
@@ -158,12 +174,70 @@ namespace Nop.Data
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            var entityEntry = this.Entry(entity);
+            var entityEntry = Entry(entity);
             if (entityEntry == null)
                 return;
             
             //set the entity is not being tracked by the context
             entityEntry.State = EntityState.Detached;
+        }
+
+        /// <summary>
+        /// Drop  table
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        public virtual void DropTable(string tableName)
+        {
+            if (string.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException(nameof(tableName));
+
+            //drop the table
+            var dbScript = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE [{tableName}]";
+            ExecuteSqlCommand(dbScript);
+            SaveChanges();
+        }
+
+        /// <summary>
+        /// Checks if the specified table in database exists, returns true if table exists
+        /// </summary>
+        ////// <param name="tableName"> Table name</param>
+        /// <returns>Returns true if the table exists.</returns>
+        public virtual bool TableExists(string tableName)
+        {
+            try
+            {
+                var dbScript = $"SELECT 1 FROM \"{tableName}\"";
+                ExecuteSqlCommand(dbScript);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Execute commands from the SQL script against the context database
+        /// </summary>
+        /// <param name="sql">SQL script</param>
+        public void ExecuteSqlScript(string sql)
+        {
+            var bdProvider = EngineContext.Current.Resolve<IDataProvider>();
+            var sqlCommands = bdProvider.GetCommandsFromScript(sql);
+            foreach (var command in sqlCommands)
+                ExecuteSqlCommand(command);
+        }
+
+        /// <summary>
+        /// Execute commands from a file with SQL script against the context database
+        /// </summary>
+        /// <param name="filePath">Path to the file</param>
+        public void ExecuteSqlScriptFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return;
+
+            ExecuteSqlScript(File.ReadAllText(filePath));
         }
 
         #endregion

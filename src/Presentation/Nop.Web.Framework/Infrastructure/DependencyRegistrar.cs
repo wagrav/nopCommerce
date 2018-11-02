@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Autofac;
-using Autofac.Builder;
-using Autofac.Core;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core;
@@ -62,6 +58,64 @@ namespace Nop.Web.Framework.Infrastructure
     /// </summary>
     public class DependencyRegistrar : IDependencyRegistrar
     {
+        #region Utilities
+        
+        /// <summary>
+        /// Init dependencies for database
+        /// </summary>
+        /// <param name="builder">Container builder</param>
+        /// <param name="typeFinder">Type finder</param>
+        /// <param name="config">Config</param>
+        private void InitDbDepedency(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        {
+            if (!DataSettingsManager.DatabaseIsInstalled)
+                return;
+
+            var dataProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+            
+            if (dataProviderAssembly == typeof(SqlServerDataProvider).Assembly)
+                return;
+
+            var dbDependencyType = typeFinder
+                .FindClassesOfType<IDbDependencyRegistrar>(new[] {dataProviderAssembly}).FirstOrDefault();
+
+            var dbDependency = (IDbDependencyRegistrar)Activator.CreateInstance(dbDependencyType);
+            dbDependency.Register(builder, typeFinder, config);
+        }
+
+        /// <summary>
+        /// Init context for database
+        /// </summary>
+        /// <param name="builder">Container builder</param>
+        /// <param name="typeFinder">Type finder</param>
+        /// <param name="config">Config</param>
+        private void InitDbContext(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        {
+            if (DataSettingsManager.DatabaseIsInstalled)
+            {
+                var dbContextType = typeFinder.FindClassesOfType<IDbContextRegistrar>(new[] {DataSettingsManager.DataProviderType.Assembly})
+                    .FirstOrDefault();
+
+                if (dbContextType == null || (PluginManager.ReferencedPlugins.All(p => p.Installed && p.ReferencedAssembly != dbContextType.Assembly) && dbContextType.Assembly != typeof(SqlServerDataProvider).Assembly))
+                {
+                    return;
+                }
+
+                var dbContext = (IDbContextRegistrar)Activator.CreateInstance(dbContextType);
+                dbContext.Register(builder, typeFinder, config);
+            }
+            else
+            {
+                //if database not installed use only base NopObjectContext
+                builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
+                    .As<IDbContext>().InstancePerLifetimeScope();
+            }
+        }
+
+        #endregion
+
+        #region Methods
+
         /// <summary>
         /// Register services and interfaces
         /// </summary>
@@ -80,10 +134,49 @@ namespace Nop.Web.Framework.Infrastructure
             builder.RegisterType<UserAgentHelper>().As<IUserAgentHelper>().InstancePerLifetimeScope();
 
             //data layer
-            builder.RegisterType<EfDataProviderManager>().As<IDataProviderManager>().InstancePerDependency();
-            builder.Register(context => context.Resolve<IDataProviderManager>().DataProvider).As<IDataProvider>().InstancePerDependency();
-            builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
-                .As<IDbContext>().InstancePerLifetimeScope();
+            var dataProviderType = DataSettingsManager.DataProviderType;
+            Type contextBuilderType = null;
+
+            if (dataProviderType != null)
+            {
+                builder.RegisterType(dataProviderType).As<IDataProvider>().InstancePerDependency();
+
+                //get type of IDbContextOptionsBuilderHelper
+                var dataProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+                contextBuilderType = typeFinder
+                    .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderAssembly }).FirstOrDefault();
+            }
+            else
+                builder.Register(context =>
+                {
+                    // create instance of current data provider
+                    var provider = (IDataProvider)Activator.CreateInstance(DataSettingsManager.DataProviderType);
+
+                    if (provider == null)
+                        throw new NopException($"Not supported data provider name: '{DataSettingsManager.LoadSettings()?.DataProvider}'");
+
+                    return provider;
+                }).As<IDataProvider>().InstancePerDependency();
+
+            if (contextBuilderType != null)
+            {
+                builder.RegisterType(contextBuilderType).As<IDbContextOptionsBuilderHelper>().InstancePerDependency();
+            }
+            else
+            {
+                builder.Register(context =>
+                {
+                    var dataProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+                    var optionsBuilderType = typeFinder
+                        .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderAssembly }).FirstOrDefault();
+
+                    var optionsBuilder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(optionsBuilderType);
+
+                    return optionsBuilder;
+                }).As<IDbContextOptionsBuilderHelper>().InstancePerDependency();
+            }
+
+            InitDbContext(builder, typeFinder, config);
 
             //repositories
             builder.RegisterGeneric(typeof(EfRepository<>)).As(typeof(IRepository<>)).InstancePerLifetimeScope();
@@ -227,7 +320,6 @@ namespace Nop.Web.Framework.Infrastructure
             builder.RegisterType<SubscriptionService>().As<ISubscriptionService>().SingleInstance();
             builder.RegisterType<SettingService>().As<ISettingService>().InstancePerLifetimeScope();
 
-
             builder.RegisterType<ActionContextAccessor>().As<IActionContextAccessor>().InstancePerLifetimeScope();
 
             //register all settings
@@ -260,67 +352,19 @@ namespace Nop.Web.Framework.Infrastructure
                     }, typeof(IConsumer<>)))
                     .InstancePerLifetimeScope();
             }
+
+            InitDbDepedency(builder, typeFinder, config);
         }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets order of this dependency registrar implementation
         /// </summary>
-        public int Order
-        {
-            get { return 0; }
-        }
+        public int Order => 0;
+
+        #endregion
     }
-
-
-    /// <summary>
-    /// Setting source
-    /// </summary>
-    public class SettingsSource : IRegistrationSource
-    {
-        static readonly MethodInfo BuildMethod = typeof(SettingsSource).GetMethod(
-            "BuildRegistration",
-            BindingFlags.Static | BindingFlags.NonPublic);
-
-        /// <summary>
-        /// Registrations for
-        /// </summary>
-        /// <param name="service">Service</param>
-        /// <param name="registrations">Registrations</param>
-        /// <returns>Registrations</returns>
-        public IEnumerable<IComponentRegistration> RegistrationsFor(
-            Service service,
-            Func<Service, IEnumerable<IComponentRegistration>> registrations)
-        {
-            var ts = service as TypedService;
-            if (ts != null && typeof(ISettings).IsAssignableFrom(ts.ServiceType))
-            {
-                var buildMethod = BuildMethod.MakeGenericMethod(ts.ServiceType);
-                yield return (IComponentRegistration)buildMethod.Invoke(null, null);
-            }
-        }
-
-        static IComponentRegistration BuildRegistration<TSettings>() where TSettings : ISettings, new()
-        {
-            return RegistrationBuilder
-                .ForDelegate((c, p) =>
-                {
-                    var currentStoreId = c.Resolve<IStoreContext>().CurrentStore.Id;
-                    //uncomment the code below if you want load settings per store only when you have two stores installed.
-                    //var currentStoreId = c.Resolve<IStoreService>().GetAllStores().Count > 1
-                    //    c.Resolve<IStoreContext>().CurrentStore.Id : 0;
-
-                    //although it's better to connect to your database and execute the following SQL:
-                    //DELETE FROM [Setting] WHERE [StoreId] > 0
-                    return c.Resolve<ISettingService>().LoadSetting<TSettings>(currentStoreId);
-                })
-                .InstancePerLifetimeScope()
-                .CreateRegistration();
-        }
-
-        /// <summary>
-        /// Is adapter for individual components
-        /// </summary>
-        public bool IsAdapterForIndividualComponents { get { return false; } }
-    }
-
 }

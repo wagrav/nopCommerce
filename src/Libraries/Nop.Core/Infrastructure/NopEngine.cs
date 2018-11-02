@@ -23,15 +23,6 @@ namespace Nop.Core.Infrastructure
     /// </summary>
     public class NopEngine : IEngine
     {
-        #region Properties
-
-        /// <summary>
-        /// Gets or sets service provider
-        /// </summary>
-        private IServiceProvider _serviceProvider { get; set; }
-
-        #endregion
-
         #region Utilities
 
         /// <summary>
@@ -99,8 +90,8 @@ namespace Nop.Core.Infrastructure
             containerBuilder.Populate(services);
 
             //create service provider
-            _serviceProvider = new AutofacServiceProvider(containerBuilder.Build());
-            return _serviceProvider;
+            ServiceProvider = new AutofacServiceProvider(containerBuilder.Build());
+            return ServiceProvider;
         }
 
         /// <summary>
@@ -204,7 +195,7 @@ namespace Nop.Core.Infrastructure
             //resolve assemblies here. otherwise, plugins can throw an exception when rendering views
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             
-            return _serviceProvider;
+            return ServiceProvider;
         }
 
         /// <summary>
@@ -294,11 +285,11 @@ namespace Nop.Core.Infrastructure
         #endregion
 
         #region Properties
-
+        
         /// <summary>
         /// Service provider
         /// </summary>
-        public virtual IServiceProvider ServiceProvider => _serviceProvider;
+        public virtual IServiceProvider ServiceProvider { get; protected set; }
 
         #endregion
     }

@@ -606,6 +606,8 @@ namespace Nop.Web.Controllers
                     model.Username = model.Username.Trim();
                 }
 
+                model.Email = model.Email.ToLower();
+
                 var isApproved = _customerSettings.UserRegistrationType == UserRegistrationType.Standard;
                 var registrationRequest = new CustomerRegistrationRequest(customer,
                     model.Email,

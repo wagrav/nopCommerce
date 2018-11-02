@@ -1,7 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
+using Nop.Core.Infrastructure;
+using Nop.Data;
 
 namespace Nop.Web.Framework.Infrastructure.Extensions
 {
@@ -19,16 +23,14 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         {
             var nopConfig = services.BuildServiceProvider().GetRequiredService<NopConfig>();
 
+            var dataProviderType = DataSettingsManager.DataProviderType;
+
             var dataSettings = DataSettingsManager.LoadSettings();
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
-
-            if (nopConfig.UseRowNumberForPaging)
-                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
-            else
-                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
+            var dbContext = EngineContext.Current.Resolve<IDbContextOptionsBuilderHelper>();
+            dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
         }
     }
 }

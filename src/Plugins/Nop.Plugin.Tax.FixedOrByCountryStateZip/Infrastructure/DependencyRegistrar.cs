@@ -5,11 +5,9 @@ using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data;
-using Nop.Plugin.Tax.FixedOrByCountryStateZip.Data;
 using Nop.Plugin.Tax.FixedOrByCountryStateZip.Domain;
 using Nop.Plugin.Tax.FixedOrByCountryStateZip.Services;
 using Nop.Services.Tax;
-using Nop.Web.Framework.Infrastructure.Extensions;
 
 namespace Nop.Plugin.Tax.FixedOrByCountryStateZip.Infrastructure
 {
@@ -28,9 +26,6 @@ namespace Nop.Plugin.Tax.FixedOrByCountryStateZip.Infrastructure
         {
             builder.RegisterType<FixedOrByCountryStateZipTaxProvider>().As<ITaxProvider>().InstancePerLifetimeScope();
             builder.RegisterType<CountryStateZipService>().As<ICountryStateZipService>().InstancePerLifetimeScope();
-
-            //data context
-            builder.RegisterPluginDataContext<CountryStateZipObjectContext>("nop_object_context_tax_country_state_zip");
 
             //override required repository with our custom context
             builder.RegisterType<EfRepository<TaxRate>>().As<IRepository<TaxRate>>()

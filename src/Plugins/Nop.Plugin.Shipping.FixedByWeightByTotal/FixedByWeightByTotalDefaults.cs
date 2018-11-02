@@ -1,5 +1,4 @@
-﻿
-namespace Nop.Plugin.Shipping.FixedByWeightByTotal
+﻿namespace Nop.Plugin.Shipping.FixedByWeightByTotal
 {
     /// <summary>
     /// Represents constants of the "Fixed or by weight" shipping plugin

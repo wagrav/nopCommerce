@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Collections.Generic;
+using System.Data.Common;
 
 namespace Nop.Core.Data
 {
@@ -20,6 +21,13 @@ namespace Nop.Core.Data
         /// <returns>Parameter</returns>
         DbParameter GetParameter();
 
+        /// <summary>
+        /// Get SQL commands from the script
+        /// </summary>
+        /// <param name="sql">SQL script</param>
+        /// <returns>List of commands</returns>
+        IList<string> GetCommandsFromScript(string sql);
+
         #endregion
 
         #region Properties
@@ -33,6 +41,11 @@ namespace Nop.Core.Data
         /// Gets a maximum length of the data for HASHBYTES functions, returns 0 if HASHBYTES function is not supported
         /// </summary>
         int SupportedLengthOfBinaryHash { get; }
+
+        /// <summary>
+        /// Gets a data provider name
+        /// </summary>
+        string DataProviderName { get; }
 
         #endregion
     }
