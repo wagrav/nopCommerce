@@ -82,8 +82,9 @@ namespace Nop.Web.Framework.Infrastructure
             //data layer
             builder.RegisterType<EfDataProviderManager>().As<IDataProviderManager>().InstancePerDependency();
             builder.Register(context => context.Resolve<IDataProviderManager>().DataProvider).As<IDataProvider>().InstancePerDependency();
-            builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
-                .As<IDbContext>().InstancePerLifetimeScope();
+
+            InitDbContext(builder, typeFinder, config);
+
 
             //repositories
             builder.RegisterGeneric(typeof(EfRepository<>)).As(typeof(IRepository<>)).InstancePerLifetimeScope();
@@ -260,7 +261,84 @@ namespace Nop.Web.Framework.Infrastructure
                     }, typeof(IConsumer<>)))
                     .InstancePerLifetimeScope();
             }
+
+            InitDbDepedency(builder, typeFinder, config);
         }
+
+
+        /// <summary>
+        /// Init dependencies for database
+        /// </summary>
+        /// <param name="builder">Container builder</param>
+        /// <param name="typeFinder">Type finder</param>
+        /// <param name="config">Config</param>
+        private void InitDbDepedency(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        {
+
+            if (DataSettingsManager.DatabaseIsInstalled)
+            {
+                IDataProvider dp = new EfDataProviderManager().DataProvider;
+
+
+                if (dp.DataProviderName != "SqlServer")
+                {
+                    var providerTypes = typeFinder.FindClassesOfType<IDataProvider>();
+                    var dbDependencyTypes = typeFinder.FindClassesOfType<IDbDependencyRegistrar>();
+                    var dbDependencyType = dbDependencyTypes.Select(p => p).Where(p => p.Assembly == dp.GetType().Assembly).FirstOrDefault();
+                    var dbDependency = (IDbDependencyRegistrar)Activator.CreateInstance(dbDependencyType);
+                    dbDependency.Register(builder, typeFinder, config);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Init context for database
+        /// </summary>
+        /// <param name="builder">Container builder</param>
+        /// <param name="typeFinder">Type finder</param>
+        /// <param name="config">Config</param>
+        private void InitDbContext(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        {
+            var _pluginFinder = new PluginFinder(null);
+            var instaledPluginsAssemblies = PluginManager.InstalledPlugins.Select(p => p.ReferencedAssembly).ToList();
+
+            if (DataSettingsManager.DatabaseIsInstalled)
+            {
+                IDataProvider dp = new EfDataProviderManager().DataProvider;
+
+                if (dp.DataProviderName == "SqlServer")
+                {
+                    builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
+                        .As<IDbContext>().InstancePerLifetimeScope();
+                    return;
+                }
+                else
+                {
+                    var dbDependencyTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
+                    var dbDependencyType = dbDependencyTypes.Select(p => p).Where(p => p.Assembly == dp.GetType().Assembly).FirstOrDefault();
+                    if (!instaledPluginsAssemblies.Contains(dbDependencyType.Assembly))
+                    {
+                        return;
+                    }
+                    var dbDependency = (IDbContextRegistrar)Activator.CreateInstance(dbDependencyType);
+                    dbDependency.Register(builder, typeFinder, config);
+                }
+            }
+            else
+            {
+                builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
+                    .As<IDbContext>().InstancePerLifetimeScope();
+
+                var dbDependencyTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
+                foreach (var dbDependencyType in dbDependencyTypes)
+                {
+                    var dbDependency = (IDbContextRegistrar)Activator.CreateInstance(dbDependencyType);
+                    dbDependency.Register(builder, typeFinder, config);
+                }
+
+            }
+        }
+
 
         /// <summary>
         /// Gets order of this dependency registrar implementation
@@ -321,6 +399,9 @@ namespace Nop.Web.Framework.Infrastructure
         /// Is adapter for individual components
         /// </summary>
         public bool IsAdapterForIndividualComponents { get { return false; } }
+
+
+
     }
 
 }

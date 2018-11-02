@@ -2,6 +2,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
+using Nop.Core.Infrastructure;
+using Nop.Core.Infrastructure.DependencyManagement;
+using Nop.Data;
+using System;
+using System.Linq;
 
 namespace Nop.Web.Framework.Infrastructure.Extensions
 {
@@ -23,12 +28,31 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
+            //var typeFinder = new WebAppTypeFinder();
+            //var providerTypes = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>();
+            //var providerType = providerTypes.Select(p => p).Where(p => p.Name == dataSettings.DataProvider).FirstOrDefault();
 
-            if (nopConfig.UseRowNumberForPaging)
-                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
+            if (dataSettings.DataProvider == "SqlServerDataProvider")
+            {
+                //register copitns for Ms SqlServer
+                var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
+
+                if (nopConfig.UseRowNumberForPaging)
+                    dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
+                else
+                    dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
+                return;
+            }
             else
-                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
+            {
+                IDataProvider dp = new EfDataProviderManager().DataProvider;
+                var typeFinder = new WebAppTypeFinder();
+                var dbContextTypes = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>();
+                var dbContextType = dbContextTypes.Select(p => p).Where(p => p.Assembly == dp.GetType().Assembly).FirstOrDefault();
+                var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
+                dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
+            }
+
         }
     }
 }

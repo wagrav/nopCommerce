@@ -34,6 +34,11 @@ namespace Nop.Core.Data
         /// </summary>
         int SupportedLengthOfBinaryHash { get; }
 
+        /// <summary>
+        /// Gets a maximum length of the data for HASHBYTES functions, returns 0 if HASHBYTES function is not supported
+        /// </summary>
+        string DataProviderName { get; }
+
         #endregion
     }
 }

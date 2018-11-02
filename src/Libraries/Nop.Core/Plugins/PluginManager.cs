@@ -527,6 +527,8 @@ namespace Nop.Core.Plugins
                 }
 
                 ReferencedPlugins = referencedPlugins;
+                InstalledPlugins = referencedPlugins.Select(pluginDescriptor => pluginDescriptor)
+                    .Where(pluginDescriptor => pluginDescriptor.Installed).ToList();
                 IncompatiblePlugins = incompatiblePlugins;
             }
         }
@@ -717,6 +719,11 @@ namespace Nop.Core.Plugins
         /// Returns a collection of all referenced plugin assemblies that have been shadow copied
         /// </summary>
         public static IEnumerable<PluginDescriptor> ReferencedPlugins { get; set; }
+
+        /// <summary>
+        /// Returns a collection of all installed plugin assemblies that have been shadow copied
+        /// </summary>
+        public static IEnumerable<PluginDescriptor> InstalledPlugins { get; set; }
 
         /// <summary>
         /// Returns a collection of all plugin which are not compatible with the current version

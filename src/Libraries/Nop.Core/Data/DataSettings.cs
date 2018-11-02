@@ -23,8 +23,10 @@ namespace Nop.Core.Data
         /// <summary>
         /// Gets or sets a data provider
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
-        public DataProviderType DataProvider { get; set; }
+        //[JsonConverter(typeof(StringEnumConverter))]
+        //public DataProviderType DataProvider { get; set; }
+
+        public string DataProvider { get; set; }
 
         /// <summary>
         /// Gets or sets a connection string
@@ -41,7 +43,9 @@ namespace Nop.Core.Data
         /// </summary>
         /// <returns></returns>
         [JsonIgnore]
-        public bool IsValid => DataProvider != DataProviderType.Unknown && !string.IsNullOrEmpty(DataConnectionString);
+        //__ ????
+        //public bool IsValid => DataProvider != DataProviderType.Unknown && !string.IsNullOrEmpty(DataConnectionString);
+        public bool IsValid => !string.IsNullOrEmpty(DataProvider) &&  !string.IsNullOrEmpty(DataConnectionString);  /*DataProvider != DataProviderType.Unknown &&*/
 
         #endregion
     }

@@ -1,5 +1,9 @@
 ﻿using Nop.Core;
 using Nop.Core.Data;
+using Nop.Core.Infrastructure;
+using Nop.Core.Infrastructure.DependencyManagement;
+using System;
+using System.Linq;
 
 namespace Nop.Data
 {
@@ -17,24 +21,25 @@ namespace Nop.Data
         {
             get
             {
+                //get current provider type from DataSettings
                 var providerName = DataSettingsManager.LoadSettings()?.DataProvider;
-                switch (providerName)
+                var typeFinder = new WebAppTypeFinder();
+                var providerTypes = typeFinder.FindClassesOfType<IDataProvider>();
+                var providerType = providerTypes.Select(p => p).Where(p => p.Name == providerName).FirstOrDefault();
+
+
+                if (providerType != null)
                 {
-                    case DataProviderType.SqlServer:
-                        return new SqlServerDataProvider();
 
-                    //starting version 4.10 we support MS SQL Server only. SQL Server Compact is not supported anymore
-                    //but we leave this code because we plan to support other databases soon (e.g. MySQL)
-
-                    //case "sqlce":
-                    //    return new SqlCeDataProvider();
-
-                    default:
-                        throw new NopException($"Not supported data provider name: '{providerName}'");
+                    // create inctance of current data provider
+                    return (IDataProvider)Activator.CreateInstance(providerType);
+                }
+                else
+                {
+                    throw new NopException($"Not supported data provider name: '{providerName}'");
                 }
             }
         }
-
         #endregion
     }
 }
