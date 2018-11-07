@@ -30,11 +30,23 @@
         });
 
         function toggleSitemapSettings() {
+            var containers = [
+                $("#pnlSitemapPageSize"),
+                $("#pnlSitemapIncludeCategories"),
+                $("#pnlSitemapIncludeManufacturers"),
+                $("#pnlSitemapIncludeProducts"),
+                $("#pnlSitemapIncludeProductTags"),
+                $("#pnlSitemapIncludeTopics"),
+                $("#pnlSitemapIncludeBlogPosts"),
+                $("#pnlSitemapIncludeNews")
+            ];
             if ($('#@Html.IdFor(model => model.StoreInformationSettings.SitemapEnabled)').is(':checked')) {
-                $("#pnlSitemapPageSize, #pnlSitemapIncludeCategories, #pnlSitemapIncludeManufacturers, #pnlSitemapIncludeProducts, #pnlSitemapIncludeProductTags").show();
+                for (var i = 0; i < containers.length; ++i)
+                    containers[i].show();
             }
             else {
-                $("#pnlSitemapPageSize, #pnlSitemapIncludeCategories, #pnlSitemapIncludeManufacturers, #pnlSitemapIncludeProducts, #pnlSitemapIncludeProductTags").hide();
+                for (var j = 0; j < containers.length; ++j)
+                    containers[j].hide();
             }
         }
 
@@ -506,6 +518,36 @@
                                 <div class="col-md-9">
                                     <nop-editor asp-for="StoreInformationSettings.SitemapIncludeProductTags" />
                                     <span asp-validation-for="StoreInformationSettings.SitemapIncludeProductTags"></span>
+                                </div>
+                            </div>
+                            <div class="form-group advanced-setting" id="pnlSitemapIncludeTopics">
+                                <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="StoreInformationSettings.SitemapIncludeTopics_OverrideForStore" asp-input="StoreInformationSettings.SitemapIncludeTopics" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                    <nop-label asp-for="StoreInformationSettings.SitemapIncludeTopics" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="StoreInformationSettings.SitemapIncludeTopics" />
+                                    <span asp-validation-for="StoreInformationSettings.SitemapIncludeTopics"></span>
+                                </div>
+                            </div>
+                            <div class="form-group advanced-setting" id="pnlSitemapIncludeBlogPosts">
+                                <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="StoreInformationSettings.SitemapIncludeBlogPosts_OverrideForStore" asp-input="StoreInformationSettings.SitemapIncludeBlogPosts" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                    <nop-label asp-for="StoreInformationSettings.SitemapIncludeBlogPosts" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="StoreInformationSettings.SitemapIncludeBlogPosts" />
+                                    <span asp-validation-for="StoreInformationSettings.SitemapIncludeBlogPosts"></span>
+                                </div>
+                            </div>
+                            <div class="form-group advanced-setting" id="pnlSitemapIncludeNews">
+                                <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="StoreInformationSettings.SitemapIncludeNews_OverrideForStore" asp-input="StoreInformationSettings.SitemapIncludeNews" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                    <nop-label asp-for="StoreInformationSettings.SitemapIncludeNews" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="StoreInformationSettings.SitemapIncludeNews" />
+                                    <span asp-validation-for="StoreInformationSettings.SitemapIncludeNews"></span>
                                 </div>
                             </div>
                         </nop-nested-setting>

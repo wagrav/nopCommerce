@@ -297,6 +297,7 @@ namespace Nop.Web.Areas.Admin.Factories
             var storeId = _storeContext.ActiveStoreScopeConfiguration;
             var storeInformationSettings = _settingService.LoadSetting<StoreInformationSettings>(storeId);
             var commonSettings = _settingService.LoadSetting<CommonSettings>(storeId);
+            var sitemapSettings = _settingService.LoadSetting<SitemapSettings>(storeId);
 
             //fill in model values from the entity
             var model = new StoreInformationSettingsModel
@@ -314,12 +315,15 @@ namespace Nop.Web.Areas.Admin.Factories
                 UseSystemEmailForContactUsForm = commonSettings.UseSystemEmailForContactUsForm,
                 PopupForTermsOfServiceLinks = commonSettings.PopupForTermsOfServiceLinks,
                 UseResponseCompression = commonSettings.UseResponseCompression,
-                SitemapEnabled = commonSettings.SitemapEnabled,
-                SitemapPageSize = commonSettings.SitemapPageSize,
-                SitemapIncludeCategories = commonSettings.SitemapIncludeCategories,
-                SitemapIncludeManufacturers = commonSettings.SitemapIncludeManufacturers,
-                SitemapIncludeProducts = commonSettings.SitemapIncludeProducts,
-                SitemapIncludeProductTags = commonSettings.SitemapIncludeProductTags
+                SitemapEnabled = sitemapSettings.SitemapEnabled,
+                SitemapPageSize = sitemapSettings.SitemapPageSize,
+                SitemapIncludeBlogPosts = sitemapSettings.SitemapIncludeBlogPosts,
+                SitemapIncludeCategories = sitemapSettings.SitemapIncludeCategories,
+                SitemapIncludeManufacturers = sitemapSettings.SitemapIncludeManufacturers,
+                SitemapIncludeNews = sitemapSettings.SitemapIncludeNews,
+                SitemapIncludeProducts = sitemapSettings.SitemapIncludeProducts,
+                SitemapIncludeProductTags = sitemapSettings.SitemapIncludeProductTags,
+                SitemapIncludeTopics = sitemapSettings.SitemapIncludeTopics
             };
 
             //prepare available themes
@@ -342,12 +346,15 @@ namespace Nop.Web.Areas.Admin.Factories
             model.UseSystemEmailForContactUsForm_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.UseSystemEmailForContactUsForm, storeId);
             model.PopupForTermsOfServiceLinks_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.PopupForTermsOfServiceLinks, storeId);
             model.UseResponseCompression_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.UseResponseCompression, storeId);
-            model.SitemapEnabled_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapEnabled, storeId);
-            model.SitemapPageSize_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapPageSize, storeId);
-            model.SitemapIncludeCategories_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapIncludeCategories, storeId);
-            model.SitemapIncludeManufacturers_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapIncludeManufacturers, storeId);
-            model.SitemapIncludeProducts_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapIncludeProducts, storeId);
-            model.SitemapIncludeProductTags_OverrideForStore = _settingService.SettingExists(commonSettings, x => x.SitemapIncludeProductTags, storeId);
+            model.SitemapEnabled_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapEnabled, storeId);
+            model.SitemapPageSize_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapPageSize, storeId);
+            model.SitemapIncludeBlogPosts_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeBlogPosts, storeId);
+            model.SitemapIncludeCategories_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeCategories, storeId);
+            model.SitemapIncludeManufacturers_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeManufacturers, storeId);
+            model.SitemapIncludeNews_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeNews, storeId);
+            model.SitemapIncludeProducts_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeProducts, storeId);
+            model.SitemapIncludeProductTags_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeProductTags, storeId);
+            model.SitemapIncludeTopics_OverrideForStore = _settingService.SettingExists(sitemapSettings, x => x.SitemapIncludeTopics, storeId);
 
             return model;
         }
