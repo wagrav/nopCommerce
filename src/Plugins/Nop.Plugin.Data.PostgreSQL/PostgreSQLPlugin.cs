@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
@@ -13,35 +15,13 @@ namespace Nop.Plugin.Data.PostgreSQL
     /// <summary>
     /// PLugin
     /// </summary>
-    public class PostgreSQLPlugin : BasePlugin//, IWidgetPlugin
+    public class PostgreSQLPlugin : BasePlugin, IDbPlugin
     {
-        private readonly ILocalizationService _localizationService;
-        private readonly IPictureService _pictureService;
-        private readonly ISettingService _settingService;
-        private readonly IWebHelper _webHelper;
-        private readonly INopFileProvider _fileProvider;
 
-        public PostgreSQLPlugin(ILocalizationService localizationService,
-            IPictureService pictureService,
-            ISettingService settingService,
-            IWebHelper webHelper,
-            INopFileProvider fileProvider)
+        public PostgreSQLPlugin()
         {
-            this._localizationService = localizationService;
-            this._pictureService = pictureService;
-            this._settingService = settingService;
-            this._webHelper = webHelper;
-            this._fileProvider = fileProvider;
         }
 
-        /// <summary>
-        /// Gets widget zones where this widget should be rendered
-        /// </summary>
-        /// <returns>Widget zones</returns>
-        public IList<string> GetWidgetZones()
-        {
-            return new List<string> { PublicWidgetZones.DbTypeRadio };
-        }
 
         /// <summary>
         /// Gets a configuration page URL
@@ -52,15 +32,17 @@ namespace Nop.Plugin.Data.PostgreSQL
             //return _webHelper.GetStoreLocation() + "Admin/WidgetsNivoSlider/Configure";
         }
 
-        /// <summary>
-        /// Gets a name of a view component for displaying widget
-        /// </summary>
-        /// <param name="widgetZone">Name of the widget zone</param>
-        /// <returns>View component name</returns>
-        public string GetWidgetViewComponentName(string widgetZone)
+        public string DbProvider()
         {
-            return "PostgreSql";
+            return "~/Plugins/Data.PostgreSQL/Views/_DbProvider.cshtml";
         }
+
+        public string DbConnectionInfo()
+        {
+            return "~/Plugins/Data.PostgreSQL/Views/_DbConnectionInfo.cshtml";
+        }
+
+        
 
         /// <summary>
         /// Install plugin

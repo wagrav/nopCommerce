@@ -12,6 +12,7 @@ using Nop.Core.Configuration;
 using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Services.Installation;
 using Nop.Services.Plugins;
 using Nop.Services.Security;
@@ -206,6 +207,17 @@ namespace Nop.Web.Controllers
                 });
             }
 
+            var typeFinder = new WebAppTypeFinder();
+            var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
+            var bdPlugins = new List<IDbPlugin>();
+            foreach (var bdPluginType in bdPluginsTypes)
+            {
+                var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
+                bdPlugins.Add(bdPlugin);
+            }
+
+            model.DbPlugins = bdPlugins;
+
             return View(model);
         }
 
@@ -340,7 +352,7 @@ namespace Nop.Web.Controllers
                     //save settings
                     DataSettingsManager.SaveSettings(new DataSettings
                     {
-                        DataProvider = model.DataProvider,
+                        DataProvider = "SqlServerDataProvider", //__ model.DataProvider,
                         DataConnectionString = connectionString
                     }, _fileProvider);
 

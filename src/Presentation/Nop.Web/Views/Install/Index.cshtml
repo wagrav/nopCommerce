@@ -59,81 +59,98 @@
                 <p>@ILS.GetResource("Documentation1") <a href="http://docs.nopcommerce.com/dashboard.action?utm_source=installation-page&utm_medium=footer&utm_campaign=installation-page" target="_blank">@ILS.GetResource("Documentation2")</a>.</p>
 
                 <script>
-    function showThrobber(message) {
-        $('.throbber-header').html(message);
-        window.setTimeout(function () {
-            $(".throbber").show();
-        }, 1000);
-    }
+                    var connectionInfo = connectionInfo || {};
 
-    $(document).ready(function () {
-        $('#installation-form').submit(function () {
-            if ($('#installation-form').valid()) {
-                $("html, body").animate({ scrollTop: 0 }, 400);
-                showThrobber('@Html.Raw(JavaScriptEncoder.Default.Encode(ILS.GetResource("Installing")))');
-                $('input[type=submit]', this).attr('disabled', 'disabled');
-            }
-        });
-    });
+                    function showThrobber(message) {
+                        $('.throbber-header').html(message);
+                        window.setTimeout(function () {
+                            $(".throbber").show();
+                        })
+                    };
 
-    $(document).ready(function () {
-        $('#restart-form').submit(function () {
-            $("html, body").animate({ scrollTop: 0 }, 400);
-            showThrobber('@Html.Raw(JavaScriptEncoder.Default.Encode("Restarting..."))');
-            $('input[type=submit]', this).attr('disabled', 'disabled');
-        });
-    });
+                    $(document).ready(function () {
+                        $('#installation-form').submit(function () {
+                            if ($('#installation-form').valid()) {
+                                $("html, body").animate({ scrollTop: 0 }, 400);
+                                showThrobber('@Html.Raw(JavaScriptEncoder.Default.Encode(ILS.GetResource("Installing")))');
+                                $('input[type=submit]', this).attr('disabled', 'disabled');
+                            }
+                        });
+                    });
 
-    $(document).ready(function () {
-        $('input:radio[name=DataProvider]').click(toggleProvider);
-        $('input:radio[name=SqlConnectionInfo]').click(toggleSqlConnectionInfo);
-        $('input:radio[name=SqlAuthenticationType]').click(toggleSqlAuthenticationType);
-        $("input:checkbox[name=UseCustomCollation]").click(toggleCollation);
+                    $(document).ready(function () {
+                        $('#restart-form').submit(function () {
+                            $("html, body").animate({ scrollTop: 0 }, 400);
+                            showThrobber('@Html.Raw(JavaScriptEncoder.Default.Encode("Restarting..."))');
+                            $('input[type=submit]', this).attr('disabled', 'disabled');
+                        });
+                    });
 
-        toggleProvider();
-        toggleSqlConnectionInfo();
-        toggleSqlAuthenticationType();
-        toggleCollation();
-    });
+                    $(document).ready(function () {
+                        //connectionInfo["provider_sqlserver"] = "sqlConnectionInfo";
+                        connectionInfo["provider_sqlserver"] = $('#sqlConnectionInfo').html();
+                        $('#sqlConnectionInfo').html('');
+                        $('input:radio[name=DataProvider]').click(toggleProvider);
+                        //$('input:radio[name=SqlConnectionInfo]').click(toggleSqlConnectionInfo);
+                        //$('input:radio[name=SqlAuthenticationType]').click(toggleSqlAuthenticationType);
+                        //$("input:checkbox[name=UseCustomCollation]").click(toggleCollation);
+                        BindToggles();
+
+                        toggleProvider();
+                        toggleSqlConnectionInfo();
+                        toggleSqlAuthenticationType();
+                        toggleCollation();
+                    });
+
+                    function BindToggles() {
+                        $('input:radio[name=SqlConnectionInfo]').on('click', toggleSqlConnectionInfo);
+                        $('input:radio[name=SqlAuthenticationType]').on('click', toggleSqlAuthenticationType);
+                        $("input:checkbox[name=UseCustomCollation]").on('click', toggleCollation);
+                    }
+
+                    function toggleProvider() {
+                        var selectedProvider = $("input[name=DataProvider]:checked").attr('id');
+                        //if (selectedProvider == 'provider_sqlce') {
+                        //    $('#sqlConnectionInfo').hide();
+                        //} else if (selectedProvider == 'provider_sqlserver') {
+                        //    $('#sqlConnectionInfo').show();
+                        //}
+                        //$(".connectionInfos").hide();
+                        //$("#"+connectionInfo[selectedProvider]).show()
+                        $('#connectionInfo').html(connectionInfo[selectedProvider]);
+                        //$('#connectionInfo').html('');
+                        BindToggles();
+
+                    }
+
+                    function toggleSqlConnectionInfo() {
+                        var selectedProvider = $("input[name=SqlConnectionInfo]:checked").attr('id');
+                        if (selectedProvider == 'sqlconnectioninfo_values') {
+                            $('#sqlDatabaseInfo').show();
+                            $('#sqlDatabaseConnectionString').hide();
+                        } else if (selectedProvider == 'sqlconnectioninfo_raw') {
+                            $('#sqlDatabaseInfo').hide();
+                            $('#sqlDatabaseConnectionString').show();
+                        }
+                    }
+
+                    function toggleSqlAuthenticationType() {
+                        var selectedProvider = $("input[name=SqlAuthenticationType]:checked").attr('id');
+                        if (selectedProvider == 'sqlauthenticationtype_sql') {
+                            $('#pnlSqlServerCredentials').show();
+                        } else if (selectedProvider == 'sqlauthenticationtype_windows') {
+                            $('#pnlSqlServerCredentials').hide();
+                        }
+                    }
 
 
-    function toggleProvider() {
-        var selectedProvider = $("input[name=DataProvider]:checked").attr('id');
-        if (selectedProvider == 'provider_sqlce') {
-            $('#sqlConnectionInfo').hide();
-        } else if (selectedProvider == 'provider_sqlserver') {
-            $('#sqlConnectionInfo').show();
-        }
-    }
-
-    function toggleSqlConnectionInfo() {
-        var selectedProvider = $("input[name=SqlConnectionInfo]:checked").attr('id');
-        if (selectedProvider == 'sqlconnectioninfo_values') {
-            $('#sqlDatabaseInfo').show();
-            $('#sqlDatabaseConnectionString').hide();
-        } else if (selectedProvider == 'sqlconnectioninfo_raw') {
-            $('#sqlDatabaseInfo').hide();
-            $('#sqlDatabaseConnectionString').show();
-        }
-    }
-
-    function toggleSqlAuthenticationType() {
-        var selectedProvider = $("input[name=SqlAuthenticationType]:checked").attr('id');
-        if (selectedProvider == 'sqlauthenticationtype_sql') {
-            $('#pnlSqlServerCredentials').show();
-        } else if (selectedProvider == 'sqlauthenticationtype_windows') {
-            $('#pnlSqlServerCredentials').hide();
-        }
-    }
-
-
-    function toggleCollation() {
-        if ($('#UseCustomCollation').is(':checked')) {
-            $('#Collation').show();
-        } else {
-            $('#Collation').hide();
-        }
-    }
+                    function toggleCollation() {
+                        if ($('#UseCustomCollation').is(':checked')) {
+                            $('#Collation').show();
+                        } else {
+                            $('#Collation').hide();
+                        }
+                    }
                 </script>
 
                 <div class="form-horizontal">
@@ -224,10 +241,17 @@
                                             @ILS.GetResource("SqlStandard") @*<strong>@ILS.GetResource("Recommended")</strong>*@
                                         </label>
                                     </div>
+                                    @foreach (var dbPlugin in Model.DbPlugins)
+                                     {
+                                        await Html.RenderPartialAsync(dbPlugin.DbProvider());
+                                     }
                                 </div>
                             </div>
 
-                            <div id="sqlConnectionInfo">
+                            <div id="connectionInfo">
+                            <div>
+
+                            <div id="sqlConnectionInfo" class="connectionInfos">
                                 <hr />
                                 <div class="form-group">
                                     <div class="col-xs-7 col-xs-offset-4">
@@ -356,6 +380,11 @@
                                     </div>
                                 </div>
                             </div>
+
+                            @foreach (var dbPlugin in Model.DbPlugins)
+                             {
+                                await Html.RenderPartialAsync(dbPlugin.DbConnectionInfo());
+                             }
                             <div class="form-group margin-t-30">
                                 <div class="col-xs-12 text-center">
                                     <button type="submit" class="btn btn-md btn-install margin-l-5">@ILS.GetResource("Install")</button>
@@ -387,5 +416,7 @@
             </div>
         </div>
     </div>
+
+
 </body>
 </html>

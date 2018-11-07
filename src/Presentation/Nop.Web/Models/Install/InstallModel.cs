@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using FluentValidation.Attributes;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Data;
+using Nop.Data;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 using Nop.Web.Validators.Install;
@@ -44,5 +45,7 @@ namespace Nop.Web.Models.Install
         public bool DisableSampleDataOption { get; set; }
         public bool InstallSampleData { get; set; }
         public List<SelectListItem> AvailableLanguages { get; set; }
+
+        public List<IDbPlugin> DbPlugins { get; set; }
     }
 }
