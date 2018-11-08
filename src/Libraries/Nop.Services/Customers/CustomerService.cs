@@ -371,9 +371,10 @@ namespace Nop.Services.Customers
 
             var query = from c in _customerRepository.Table
                         orderby c.Id
-                        where c.Email == email
+                        where c.Email == email.ToLower()
                         select c;
             var customer = query.FirstOrDefault();
+
             return customer;
         }
 
