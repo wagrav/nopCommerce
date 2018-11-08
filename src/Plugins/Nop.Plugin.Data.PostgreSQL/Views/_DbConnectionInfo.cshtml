@@ -61,6 +61,16 @@
             <div class="form-group">
                 <div class="col-xs-4">
                     <label class="control-label">
+                        @ILS.GetResource("SqlServerPort")
+                    </label>
+                </div>
+                <div class="col-xs-7">
+                    <input asp-for="SqlServerPort" class="form-control"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-xs-4">
+                    <label class="control-label">
                         @ILS.GetResource("DatabaseName")
                     </label>
                 </div>

@@ -4,6 +4,7 @@
 @*@using Nop.Data*@
 @using Nop.Web.Models.Install
 @using Nop.Web.Infrastructure.Installation
+@using Nop.Plugin.Data.PostgreSQL
 @*@using Microsoft.AspNetCore.Mvc.ViewFeatures;*@
 @*@using Microsoft.AspNetCore.Razor.TagHelpers;*@
 @*localization service for installation service
@@ -13,8 +14,8 @@
 
 <div class="radio provider_postgresql" >
     <label>
-        <input asp-for="DataProvider" value="postgresql" type="radio" id="provider_postgresql" />
-        @ILS.GetResource("PostgreSql") @*<strong>@ILS.GetResource("Recommended")</strong>*@
+        <input asp-for="DataProvider" value="PostgreSQLDataProvider" type="radio" id="provider_postgresql" />
+        @ILS.GetResource("PostgreSql") @*<strong>@ILS.GetResource("Recommended")</strong>   "postgresql"*@
     </label>
 </div>
 

@@ -237,7 +237,7 @@
                                     *@
                                     <div class="radio">
                                         <label>
-                                            <input asp-for="DataProvider" value="sqlserver" type="radio" checked="@(Model.DataProvider == DataProviderType.SqlServer)" id="provider_sqlserver" />
+                                            <input asp-for="DataProvider" value="sqlserver" type="radio" checked="checked" id="provider_sqlserver" />
                                             @ILS.GetResource("SqlStandard") @*<strong>@ILS.GetResource("Recommended")</strong>*@
                                         </label>
                                     </div>
@@ -249,7 +249,7 @@
                             </div>
 
                             <div id="connectionInfo">
-                            <div>
+                            </div>
 
                             <div id="sqlConnectionInfo" class="connectionInfos">
                                 <hr />
@@ -385,6 +385,7 @@
                              {
                                 await Html.RenderPartialAsync(dbPlugin.DbConnectionInfo());
                              }
+                            <input asp-for="DbPlugins" class="form-control" />
                             <div class="form-group margin-t-30">
                                 <div class="col-xs-12 text-center">
                                     <button type="submit" class="btn btn-md btn-install margin-l-5">@ILS.GetResource("Install")</button>

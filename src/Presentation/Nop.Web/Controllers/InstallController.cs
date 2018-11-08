@@ -30,6 +30,10 @@ namespace Nop.Web.Controllers
         private readonly INopFileProvider _fileProvider;
         private readonly NopConfig _config;
 
+        private static Dictionary<string,Type> provsT;
+
+        private static List<IDbPlugin> dbPlugins;
+
         #endregion
 
         #region Ctor
@@ -173,13 +177,34 @@ namespace Nop.Web.Controllers
             }
             return builder.ConnectionString;
         }
-        
+
+        protected List<IDbPlugin> GetBbPlugins()
+        {
+            provsT.Clear();
+
+            var typeFinder = new WebAppTypeFinder();
+            var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
+            var bdPlugins = new List<IDbPlugin>();
+            foreach (var bdPluginType in bdPluginsTypes)
+            {
+                var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
+                bdPlugins.Add(bdPlugin);
+                provsT.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+            }
+
+            return bdPlugins;
+        }
+
+
         #endregion
         
         #region Methods
 
         public virtual IActionResult Index()
         {
+            provsT = new Dictionary<string, Type>();
+            dbPlugins = new List<IDbPlugin>();
+
             if (DataSettingsManager.DatabaseIsInstalled)
                 return RedirectToRoute("HomePage");
 
@@ -188,7 +213,7 @@ namespace Nop.Web.Controllers
                 AdminEmail = "admin@yourStore.com",
                 InstallSampleData = false,
                 DatabaseConnectionString = "",
-                DataProvider = DataProviderType.SqlServer,
+                DataProvider = "sql",//DataProviderType.SqlServer,
                 //fast installation service does not support SQL compact
                 DisableSampleDataOption = _config.DisableSampleDataDuringInstallation,
                 SqlAuthenticationType = "sqlauthentication",
@@ -209,14 +234,17 @@ namespace Nop.Web.Controllers
 
             var typeFinder = new WebAppTypeFinder();
             var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
-            var bdPlugins = new List<IDbPlugin>();
+            //var bdPlugins = new List<IDbPlugin>();
             foreach (var bdPluginType in bdPluginsTypes)
             {
-                var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
-                bdPlugins.Add(bdPlugin);
+                var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
+                dbPlugins.Add(bdPlugin);
+                //provs.Add(bdPlugin.Name, bdPlugin.GetType().Assembly.FullName);
+                provsT.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
             }
 
-            model.DbPlugins = bdPlugins;
+            model.DbPlugins = dbPlugins;
+            //model.DbPlugins = GetBbPlugins();//bdPlugins;
 
             return View(model);
         }
@@ -229,6 +257,22 @@ namespace Nop.Web.Controllers
 
             if (model.DatabaseConnectionString != null)
                 model.DatabaseConnectionString = model.DatabaseConnectionString.Trim();
+
+            //var typeFinder = new WebAppTypeFinder();
+            //var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
+            //var bdPluginType = bdPluginsTypes.Select(p => p)
+            //    .Where(p => p.GetType().Assembly.FullName == provs[model.DataProvider]).FirstOrDefault();
+            ///IDbPlugin bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
+            var bdPlugin = (IDbPlugin)Activator.CreateInstance(provsT[model.DataProvider], _locService);
+
+            //foreach (var bdPluginType in bdPluginsTypes)
+            //{
+            //    var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
+            //    bdPlugins.Add(bdPlugin);
+            //    provs.Add(bdPlugin.Name, bdPlugin.GetType().Assembly.FullName);
+            //}
+
+            bdPlugin.CheckModel(model, ModelState);
 
             //prepare language list
             foreach (var lang in _locService.GetAvailableLanguages())
@@ -244,7 +288,7 @@ namespace Nop.Web.Controllers
             model.DisableSampleDataOption = _config.DisableSampleDataDuringInstallation;
 
             //SQL Server
-            if (model.DataProvider == DataProviderType.SqlServer)
+            /*if (true)  //__(model.DataProvider == DataProviderType.SqlServer)
             {
                 if (model.SqlConnectionInfo.Equals("sqlconnectioninfo_raw", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -280,7 +324,7 @@ namespace Nop.Web.Controllers
                             ModelState.AddModelError("", _locService.GetResource("SqlServerPasswordRequired"));
                     }
                 }
-            }
+            }*/
 
             //Consider granting access rights to the resource to the ASP.NET request identity. 
             //ASP.NET has a base process identity 
@@ -304,65 +348,158 @@ namespace Nop.Web.Controllers
             {
                 try
                 {
-                    var connectionString = string.Empty;
-                    if (model.DataProvider == DataProviderType.SqlServer)
+                    /*   MSSQL
+
+                        var connectionString = string.Empty;
+                        if (true)//__(model.DataProvider == DataProviderType.SqlServer)
+                        {
+                            //SQL Server
+
+                            if (model.SqlConnectionInfo.Equals("sqlconnectioninfo_raw", StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                //raw connection string
+
+                                //we know that MARS option is required when using Entity Framework
+                                //let's ensure that it's specified
+                                var sqlCsb = new SqlConnectionStringBuilder(model.DatabaseConnectionString);
+                                if (this.UseMars)
+                                {
+                                    sqlCsb.MultipleActiveResultSets = true;
+                                }
+                                connectionString = sqlCsb.ToString();
+                            }
+                            else
+                            {
+                                //values
+                                connectionString = CreateConnectionString(model.SqlAuthenticationType == "windowsauthentication",
+                                    model.SqlServerName, model.SqlDatabaseName,
+                                    model.SqlServerUsername, model.SqlServerPassword);
+                            }
+
+                            if (model.SqlServerCreateDatabase)
+                            {
+                                if (!SqlServerDatabaseExists(connectionString))
+                                {
+                                    //create database
+                                    var collation = model.UseCustomCollation ? model.Collation : "";
+                                    var errorCreatingDatabase = CreateDatabase(connectionString, collation);
+                                    if (!string.IsNullOrEmpty(errorCreatingDatabase))
+                                        throw new Exception(errorCreatingDatabase);
+                                }
+                            }
+                            else
+                            {
+                                //check whether database exists
+                                if (!SqlServerDatabaseExists(connectionString))
+                                    throw new Exception(_locService.GetResource("DatabaseNotExists"));
+                            }
+                        }
+
+                        //save settings
+                        DataSettingsManager.SaveSettings(new DataSettings
+                        {
+                            DataProvider = "SqlServerDataProvider", //__ model.DataProvider,
+                            DataConnectionString = connectionString
+                        }, _fileProvider);
+
+                        //initialize database
+                        EngineContext.Current.Resolve<IDataProvider>().InitializeDatabase();
+
+                        //now resolve installation service
+                        var installationService = EngineContext.Current.Resolve<IInstallationService>();
+                        installationService.InstallData(model.AdminEmail, model.AdminPassword, model.InstallSampleData);
+
+                        //reset cache
+                        DataSettingsManager.ResetCache();
+
+                        //install plugins
+                        PluginManager.MarkAllPluginsAsUninstalled();
+                        var pluginFinder = EngineContext.Current.Resolve<IPluginFinder>();
+                        var plugins = pluginFinder.GetPlugins<IPlugin>(LoadPluginsMode.All)
+                            .ToList()
+                            .OrderBy(x => x.PluginDescriptor.Group)
+                            .ThenBy(x => x.PluginDescriptor.DisplayOrder)
+                            .ToList();
+                        var pluginsIgnoredDuringInstallation = string.IsNullOrEmpty(_config.PluginsIgnoredDuringInstallation) ?
+                            new List<string>() :
+                            _config.PluginsIgnoredDuringInstallation
+                            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Trim())
+                            .ToList();
+                        foreach (var plugin in plugins)
+                        {
+                            if (pluginsIgnoredDuringInstallation.Contains(plugin.PluginDescriptor.SystemName))
+                                continue;
+
+                            plugin.Install();
+                        }
+
+                        //register default permissions
+                        //var permissionProviders = EngineContext.Current.Resolve<ITypeFinder>().FindClassesOfType<IPermissionProvider>();
+                        var permissionProviders = new List<Type> { typeof(StandardPermissionProvider) };
+                        foreach (var providerType in permissionProviders)
+                        {
+                            var provider = (IPermissionProvider)Activator.CreateInstance(providerType);
+                            EngineContext.Current.Resolve<IPermissionService>().InstallPermissions(provider);
+                        }
+
+                        //restart application
+                        webHelper.RestartAppDomain();
+
+                        //Redirect to home page
+                        return RedirectToRoute("HomePage");
+                    }
+                    catch (Exception exception)
                     {
-                        //SQL Server
+                        //reset cache
+                        DataSettingsManager.ResetCache();
 
-                        if (model.SqlConnectionInfo.Equals("sqlconnectioninfo_raw", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            //raw connection string
+                        var cacheManager = EngineContext.Current.Resolve<IStaticCacheManager>();
+                        cacheManager.Clear();
 
-                            //we know that MARS option is required when using Entity Framework
-                            //let's ensure that it's specified
-                            var sqlCsb = new SqlConnectionStringBuilder(model.DatabaseConnectionString);
-                            if (this.UseMars)
-                            {
-                                sqlCsb.MultipleActiveResultSets = true;
-                            }
-                            connectionString = sqlCsb.ToString();
-                        }
-                        else
-                        {
-                            //values
-                            connectionString = CreateConnectionString(model.SqlAuthenticationType == "windowsauthentication",
-                                model.SqlServerName, model.SqlDatabaseName,
-                                model.SqlServerUsername, model.SqlServerPassword);
-                        }
+                        //clear provider settings if something got wrong
+                        DataSettingsManager.SaveSettings(new DataSettings(), _fileProvider);
 
-                        if (model.SqlServerCreateDatabase)
+                        ModelState.AddModelError("", string.Format(_locService.GetResource("SetupFailed"), exception.Message));
+                    }
+                MSSQL*/
+                    var connectionString = bdPlugin.GetConnectionString(model);
+
+
+                    if (model.SqlServerCreateDatabase)
+                    {
+                        if (!bdPlugin.DatabaseExists(connectionString))
                         {
-                            if (!SqlServerDatabaseExists(connectionString))
-                            {
-                                //create database
-                                var collation = model.UseCustomCollation ? model.Collation : "";
-                                var errorCreatingDatabase = CreateDatabase(connectionString, collation);
-                                if (!string.IsNullOrEmpty(errorCreatingDatabase))
-                                    throw new Exception(errorCreatingDatabase);
-                            }
-                        }
-                        else
-                        {
-                            //check whether database exists
-                            if (!SqlServerDatabaseExists(connectionString))
-                                throw new Exception(_locService.GetResource("DatabaseNotExists"));
+                            //create database
+                            var collation = model.UseCustomCollation ? model.Collation : "";
+                            var errorCreatingDatabase = bdPlugin.CreateDatabase(connectionString, collation);
+                            if (!string.IsNullOrEmpty(errorCreatingDatabase))
+                                throw new Exception(errorCreatingDatabase);
                         }
                     }
+                    else
+                    {
+                        //check whether database exists
+                        if (!bdPlugin.DatabaseExists(connectionString))
+                            throw new Exception(_locService.GetResource("DatabaseNotExists"));
+                    }
 
-                    //save settings
                     DataSettingsManager.SaveSettings(new DataSettings
                     {
-                        DataProvider = "SqlServerDataProvider", //__ model.DataProvider,
+                        DataProvider = bdPlugin.DataProviderName,
                         DataConnectionString = connectionString
                     }, _fileProvider);
+
+
 
                     //initialize database
                     EngineContext.Current.Resolve<IDataProvider>().InitializeDatabase();
 
                     //now resolve installation service
                     var installationService = EngineContext.Current.Resolve<IInstallationService>();
-                    installationService.InstallData(model.AdminEmail, model.AdminPassword, model.InstallSampleData);
+                    installationService.InstallData(model.AdminEmail.ToLower(), model.AdminPassword, model.InstallSampleData);
 
+                    
                     //reset cache
                     DataSettingsManager.ResetCache();
 
@@ -387,7 +524,7 @@ namespace Nop.Web.Controllers
 
                         plugin.Install();
                     }
-
+                    //_-----------------------------------------------------
                     //register default permissions
                     //var permissionProviders = EngineContext.Current.Resolve<ITypeFinder>().FindClassesOfType<IPermissionProvider>();
                     var permissionProviders = new List<Type> { typeof(StandardPermissionProvider) };
@@ -402,12 +539,13 @@ namespace Nop.Web.Controllers
 
                     //Redirect to home page
                     return RedirectToRoute("HomePage");
+                    //_-----------------------------------------------------
                 }
                 catch (Exception exception)
                 {
                     //reset cache
                     DataSettingsManager.ResetCache();
-                    
+
                     var cacheManager = EngineContext.Current.Resolve<IStaticCacheManager>();
                     cacheManager.Clear();
 
@@ -417,6 +555,8 @@ namespace Nop.Web.Controllers
                     ModelState.AddModelError("", string.Format(_locService.GetResource("SetupFailed"), exception.Message));
                 }
             }
+            model.DbPlugins = dbPlugins; //GetBbPlugins();
+
             return View(model);
         }
 

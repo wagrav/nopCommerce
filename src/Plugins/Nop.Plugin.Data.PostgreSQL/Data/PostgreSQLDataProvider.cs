@@ -25,19 +25,14 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <param name="tablename">Used table name</param>
         public virtual void InitializeDatabase() //__(string tablename)
         {
-            var tablename = "";
             var context = EngineContext.Current.Resolve<IDbContext>();
 
             //check some of table names to ensure that we have nopCommerce 2.00+ installed
             var tableNamesToValidate = new List<string> { "Customer", "Discount", "Order", "Product", "ShoppingCartItem" };
-            var existingTableNames1 = context
-              .QueryFromSql<StringQueryType>(
-                  $"SELECT table_name AS Value FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{tablename}'");
-
+            var query = $"SELECT table_name AS \"Value\" FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{context.DbName()}'";
             var existingTableNames = context
                 .QueryFromSql<StringQueryType>(
-                    $"SELECT table_name AS Value FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{tablename}'")
-
+                    $"SELECT table_name AS \"Value\" FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{context.DbName()}'")
                 .Select(stringValue => stringValue.Value).ToList();
             var createTables = !existingTableNames.Intersect(tableNamesToValidate, StringComparer.InvariantCultureIgnoreCase).Any();
             if (!createTables)
@@ -80,7 +75,8 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// </summary>
         public virtual int SupportedLengthOfBinaryHash => 8000; //for SQL Server 2008 and above HASHBYTES function has a limit of 8000 characters.
 
-        public string DataProviderName => "PostgreSQL";
+        public string DataProviderName => "PostgreSQLDataProvider";
+
         #endregion
     }
 }
