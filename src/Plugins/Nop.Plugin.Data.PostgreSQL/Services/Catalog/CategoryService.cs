@@ -90,7 +90,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
         /// <returns>Categories</returns>
         public override IPagedList<Category> GetAllCategories(string categoryName, int storeId = 0,
             int pageIndex = 0, int pageSize = int.MaxValue, bool showHidden = false)
-        {//----
+        {
             if (_commonSettings.UseStoredProcedureForLoadingCategories)
             {
                 //stored procedures are enabled for loading categories and supported by the database. 
@@ -118,20 +118,20 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 { Value = pageSize };
 
                 //pass allowed customer role identifiers as comma-delimited string
-                //var customerRoleIdsParameter = _dataProvider.GetStringParameter("CustomerRoleIds", !_catalogSettings.IgnoreAcl ? string.Join(",", _workContext.CurrentCustomer.GetCustomerRoleIds()) : string.Empty);
+                var customerRoleIds = !_catalogSettings.IgnoreAcl ? string.Join(",", _workContext.CurrentCustomer.GetCustomerRoleIds()) :  string.Empty ;
                 var customerRoleIdsParameter = new Npgsql.NpgsqlParameter("customerroleids", NpgsqlTypes.NpgsqlDbType.Text)
-                { Value = !_catalogSettings.IgnoreAcl ? string.Join(",", _workContext.CurrentCustomer.GetCustomerRoleIds()) :  string.Empty };
+                { Value = customerRoleIds};
 
-                //var totalRecordsParameter = _dataProvider.GetOutputInt32Parameter("TotalRecords");
-
-                //invoke stored procedure                           "categoryloadallpaged"
+                //invoke categoryloadallpaged stored procedure
                 var categories = _dbContext.EntityFromSql<Category>("categoryloadallpaged",
                     showHiddenParameter, nameParameter, storeIdParameter, customerRoleIdsParameter,
                     pageIndexParameter, pageSizeParameter).ToList();
 
-                var totalRecords1 = _dbContext.ExecuteSqlCommand("SELECT * from public.categoryloadall(false, '', 0, '')",
-                    true); //totalRecordsParameter.Value != DBNull.Value ? Convert.ToInt32(totalRecordsParameter.Value) : 0;
-                var totalRecords = 0;
+                //invoke categoryloadallcount stored procedure
+                //always returns table with single row and single collumn named "Value"
+                var resultRow = _dbContext.QueryFromSql<IntQueryType>(
+                    $"SELECT * from public.categoryloadallcount({showHidden}, '{categoryName}', {storeId}, '{customerRoleIds}')");
+                var totalRecords = resultRow.ToList()[0].Value ?? 0;
                 //paging
                 return new PagedList<Category>(categories, pageIndex, pageSize, totalRecords);
             }

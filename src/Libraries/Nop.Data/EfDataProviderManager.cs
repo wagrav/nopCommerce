@@ -24,20 +24,16 @@ namespace Nop.Data
                 //get current provider type from DataSettings
                 var providerName = DataSettingsManager.LoadSettings()?.DataProvider;
                 var typeFinder = new WebAppTypeFinder();
-                var providerTypes = typeFinder.FindClassesOfType<IDataProvider>();
-                var providerType = providerTypes.Select(p => p).Where(p => p.Name == providerName).FirstOrDefault();
-
+                var providerType = typeFinder.FindClassesOfType<IDataProvider>()
+                    .FirstOrDefault(p => p.Name == providerName);
 
                 if (providerType != null)
                 {
-
-                    // create inctance of current data provider
+                    // create instance of current data provider
                     return (IDataProvider)Activator.CreateInstance(providerType);
                 }
-                else
-                {
-                    throw new NopException($"Not supported data provider name: '{providerName}'");
-                }
+
+                throw new NopException($"Not supported data provider name: '{providerName}'");
             }
         }
         #endregion

@@ -1,11 +1,9 @@
 ﻿using Autofac;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core.Configuration;
-using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data;
-using Nop.Plugin.Data.PostgreSQL.Data;
 using PostgreSQLContext = Nop.Plugin.Data.PostgreSQL.Data;
 using NopContext = Nop.Data;
 

@@ -6,17 +6,17 @@ namespace Nop.Data
 {
     public partial interface IDbPlugin
     {
-        string DbProvider();
-
-        string DbConnectionInfo();
-
-        string GetConnectionString(IDbPluginInstallModel model);
-
         void CheckModel(IDbPluginInstallModel model, ModelStateDictionary modelState);
 
         string CreateDatabase(string connectionString, string collation, int triesToConnect = 10);
 
         bool DatabaseExists(string connectionString);
+
+        string DbConnectionInfo();
+
+        string DbProvider();
+
+        string GetConnectionString(IDbPluginInstallModel model);
 
         string DataProviderName { get; }
     }

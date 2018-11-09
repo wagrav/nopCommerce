@@ -1,14 +1,9 @@
 ﻿using Autofac;
-using Microsoft.EntityFrameworkCore;
 using Nop.Core.Configuration;
-using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
-using Nop.Data;
-using Nop.Plugin.Data.PostgreSQL.Data;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
-using Nop.Services.Localization;
 //using ProductService = Nop.Plugin.Data.MySQL.Services.Catalog.ProductService;
 //using ProductTagService = Nop.Plugin.Data.MySQL.Services.Catalog.ProductTagService;
 using FulltextService = Nop.Plugin.Data.PostgreSQL.Services.Common.FulltextService;

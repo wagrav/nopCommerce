@@ -4209,7 +4209,7 @@ namespace Nop.Services.Installation
                  PasswordFormat.Hashed, defaultUserPassword));
 
             //second user
-            var secondUserEmail = "steve_gates@nopCommerce.com";
+            var secondUserEmail = "steve_gates@nopcommerce.com";
             var secondUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -4260,7 +4260,7 @@ namespace Nop.Services.Installation
             });
 
             //third user
-            var thirdUserEmail = "arthur_holmes@nopCommerce.com";
+            var thirdUserEmail = "arthur_holmes@nopcommerce.com";
             var thirdUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -4310,7 +4310,7 @@ namespace Nop.Services.Installation
             });
 
             //fourth user
-            var fourthUserEmail = "james_pan@nopCommerce.com";
+            var fourthUserEmail = "james_pan@nopcommerce.com";
             var fourthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -4360,7 +4360,7 @@ namespace Nop.Services.Installation
             });
 
             //fifth user
-            var fifthUserEmail = "brenda_lindgren@nopCommerce.com";
+            var fifthUserEmail = "brenda_lindgren@nopcommerce.com";
             var fifthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -4411,7 +4411,7 @@ namespace Nop.Services.Installation
             });
 
             //sixth user
-            var sixthUserEmail = "victoria_victoria@nopCommerce.com";
+            var sixthUserEmail = "victoria_victoria@nopcommerce.com";
             var sixthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -4506,7 +4506,7 @@ namespace Nop.Services.Installation
                 throw new Exception("No default store could be loaded");
 
             //first order
-            var firstCustomer = _customerRepository.Table.First(c => c.Email.Equals("steve_gates@nopCommerce.com"));
+            var firstCustomer = _customerRepository.Table.First(c => c.Email.Equals("steve_gates@nopcommerce.com"));
             var firstOrder = new Order
             {
                 StoreId = defaultStore.Id,
@@ -4626,8 +4626,8 @@ namespace Nop.Services.Installation
                 PriceInclTax = 25M,
                 PriceExclTax = 25M,
                 OriginalProductCost = decimal.Zero,
-                AttributeDescription = "From: Steve Gates &lt;steve_gates@nopCommerce.com&gt;<br />For: Brenda Lindgren &lt;brenda_lindgren@nopCommerce.com&gt;",
-                AttributesXml = "<Attributes><GiftCardInfo><RecipientName>Brenda Lindgren</RecipientName><RecipientEmail>brenda_lindgren@nopCommerce.com</RecipientEmail><SenderName>Steve Gates</SenderName><SenderEmail>steve_gates@gmail.com</SenderEmail><Message></Message></GiftCardInfo></Attributes>",
+                AttributeDescription = "From: Steve Gates &lt;steve_gates@nopcommerce.com&gt;<br />For: Brenda Lindgren &lt;brenda_lindgren@nopcommerce.com&gt;",
+                AttributesXml = "<Attributes><GiftCardInfo><RecipientName>Brenda Lindgren</RecipientName><RecipientEmail>brenda_lindgren@nopcommerce.com</RecipientEmail><SenderName>Steve Gates</SenderName><SenderEmail>steve_gates@gmail.com</SenderEmail><Message></Message></GiftCardInfo></Attributes>",
                 Quantity = 1,
                 DiscountAmountInclTax = decimal.Zero,
                 DiscountAmountExclTax = decimal.Zero,
@@ -4648,9 +4648,9 @@ namespace Nop.Services.Installation
                 IsGiftCardActivated = false,
                 GiftCardCouponCode = string.Empty,
                 RecipientName = "Brenda Lindgren",
-                RecipientEmail = "brenda_lindgren@nopCommerce.com",
+                RecipientEmail = "brenda_lindgren@nopcommerce.com",
                 SenderName = "Steve Gates",
-                SenderEmail = "steve_gates@nopCommerce.com",
+                SenderEmail = "steve_gates@nopcommerce.com",
                 Message = string.Empty,
                 IsRecipientNotified = false,
                 CreatedOnUtc = DateTime.UtcNow
@@ -4672,7 +4672,7 @@ namespace Nop.Services.Installation
             });
             
             //second order
-            var secondCustomer = _customerRepository.Table.First(c => c.Email.Equals("arthur_holmes@nopCommerce.com"));
+            var secondCustomer = _customerRepository.Table.First(c => c.Email.Equals("arthur_holmes@nopcommerce.com"));
             var secondOrder = new Order
             {
                 StoreId = defaultStore.Id,
@@ -4790,7 +4790,7 @@ namespace Nop.Services.Installation
             _orderItemRepository.Insert(secondOrderItem2);
             
             //third order
-            var thirdCustomer = _customerRepository.Table.First(c => c.Email.Equals("james_pan@nopCommerce.com"));
+            var thirdCustomer = _customerRepository.Table.First(c => c.Email.Equals("james_pan@nopcommerce.com"));
             var thirdOrder = new Order
             {
                 StoreId = defaultStore.Id,
@@ -4933,7 +4933,7 @@ namespace Nop.Services.Installation
             _orderItemRepository.Insert(thirdOrderItem3);
 
             //fourth order
-            var fourthCustomer = _customerRepository.Table.First(c => c.Email.Equals("brenda_lindgren@nopCommerce.com"));
+            var fourthCustomer = _customerRepository.Table.First(c => c.Email.Equals("brenda_lindgren@nopcommerce.com"));
             var fourthOrder = new Order
             {
                 StoreId = defaultStore.Id,
@@ -5143,7 +5143,7 @@ namespace Nop.Services.Installation
             _shipmentItemRepository.Insert(fourthOrderShipment2Item1);
 
             //fifth order
-            var fifthCustomer = _customerRepository.Table.First(c => c.Email.Equals("victoria_victoria@nopCommerce.com"));
+            var fifthCustomer = _customerRepository.Table.First(c => c.Email.Equals("victoria_victoria@nopcommerce.com"));
             var fifthOrder = new Order
             {
                 StoreId = defaultStore.Id,

@@ -30,7 +30,7 @@ namespace Nop.Web.Controllers
         private readonly INopFileProvider _fileProvider;
         private readonly NopConfig _config;
 
-        private static Dictionary<string,Type> provsT;
+        private static Dictionary<string,Type> providerTypes;
 
         private static List<IDbPlugin> dbPlugins;
 
@@ -46,9 +46,9 @@ namespace Nop.Web.Controllers
             this._fileProvider = fileProvider;
             this._config = config;
         }
-        
+
         #endregion
-        
+
         #region Utilities
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Nop.Web.Controllers
 
         protected List<IDbPlugin> GetBbPlugins()
         {
-            provsT.Clear();
+            providerTypes.Clear();
 
             var typeFinder = new WebAppTypeFinder();
             var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
@@ -189,7 +189,7 @@ namespace Nop.Web.Controllers
             {
                 var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
                 bdPlugins.Add(bdPlugin);
-                provsT.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+                providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
             }
 
             return bdPlugins;
@@ -202,7 +202,7 @@ namespace Nop.Web.Controllers
 
         public virtual IActionResult Index()
         {
-            provsT = new Dictionary<string, Type>();
+            providerTypes = new Dictionary<string, Type>();
             dbPlugins = new List<IDbPlugin>();
 
             if (DataSettingsManager.DatabaseIsInstalled)
@@ -234,17 +234,14 @@ namespace Nop.Web.Controllers
 
             var typeFinder = new WebAppTypeFinder();
             var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
-            //var bdPlugins = new List<IDbPlugin>();
             foreach (var bdPluginType in bdPluginsTypes)
             {
                 var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
                 dbPlugins.Add(bdPlugin);
-                //provs.Add(bdPlugin.Name, bdPlugin.GetType().Assembly.FullName);
-                provsT.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+                providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
             }
 
             model.DbPlugins = dbPlugins;
-            //model.DbPlugins = GetBbPlugins();//bdPlugins;
 
             return View(model);
         }
@@ -258,19 +255,7 @@ namespace Nop.Web.Controllers
             if (model.DatabaseConnectionString != null)
                 model.DatabaseConnectionString = model.DatabaseConnectionString.Trim();
 
-            //var typeFinder = new WebAppTypeFinder();
-            //var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
-            //var bdPluginType = bdPluginsTypes.Select(p => p)
-            //    .Where(p => p.GetType().Assembly.FullName == provs[model.DataProvider]).FirstOrDefault();
-            ///IDbPlugin bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
-            var bdPlugin = (IDbPlugin)Activator.CreateInstance(provsT[model.DataProvider], _locService);
-
-            //foreach (var bdPluginType in bdPluginsTypes)
-            //{
-            //    var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
-            //    bdPlugins.Add(bdPlugin);
-            //    provs.Add(bdPlugin.Name, bdPlugin.GetType().Assembly.FullName);
-            //}
+            var bdPlugin = (IDbPlugin)Activator.CreateInstance(providerTypes[model.DataProvider], _locService);
 
             bdPlugin.CheckModel(model, ModelState);
 
@@ -348,7 +333,7 @@ namespace Nop.Web.Controllers
             {
                 try
                 {
-                    /*   MSSQL
+                    /*//SQL Server
 
                         var connectionString = string.Empty;
                         if (true)//__(model.DataProvider == DataProviderType.SqlServer)
@@ -462,7 +447,8 @@ namespace Nop.Web.Controllers
 
                         ModelState.AddModelError("", string.Format(_locService.GetResource("SetupFailed"), exception.Message));
                     }
-                MSSQL*/
+                //SQL Server*/
+
                     var connectionString = bdPlugin.GetConnectionString(model);
 
 
@@ -499,7 +485,6 @@ namespace Nop.Web.Controllers
                     var installationService = EngineContext.Current.Resolve<IInstallationService>();
                     installationService.InstallData(model.AdminEmail.ToLower(), model.AdminPassword, model.InstallSampleData);
 
-                    
                     //reset cache
                     DataSettingsManager.ResetCache();
 
@@ -539,7 +524,6 @@ namespace Nop.Web.Controllers
 
                     //Redirect to home page
                     return RedirectToRoute("HomePage");
-                    //_-----------------------------------------------------
                 }
                 catch (Exception exception)
                 {
@@ -555,7 +539,7 @@ namespace Nop.Web.Controllers
                     ModelState.AddModelError("", string.Format(_locService.GetResource("SetupFailed"), exception.Message));
                 }
             }
-            model.DbPlugins = dbPlugins; //GetBbPlugins();
+            model.DbPlugins = dbPlugins;
 
             return View(model);
         }
@@ -584,7 +568,7 @@ namespace Nop.Web.Controllers
             //Redirect to home page
             return RedirectToRoute("HomePage");
         }
-        
+
         #endregion
     }
 }

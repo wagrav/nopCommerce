@@ -12,11 +12,6 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
     public class PostgreSQLDbContextOptionsBuilderHelper : IDbContextOptionsBuilderHelper
     {
         /// <summary>
-        /// Get or set the data provider type.
-        /// </summary>
-        public string DataProvider => "PostgreSQL";
-
-        /// <summary>
         /// Configure db context options to use PostgreSQL.
         /// </summary>
         /// <param name="optionsBuilder">DbContextOptionsBuilder</param>

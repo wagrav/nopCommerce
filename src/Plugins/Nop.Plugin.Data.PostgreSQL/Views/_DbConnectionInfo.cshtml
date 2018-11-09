@@ -1,11 +1,6 @@
 ﻿@model InstallModel
-@*@using System.Text.Encodings.Web*@
-@*@using Nop.Core.Data*@
-@*@using Nop.Data*@
 @using Nop.Web.Models.Install
 @using Nop.Web.Infrastructure.Installation
-@*@using Microsoft.AspNetCore.Mvc.ViewFeatures;*@
-@*@using Microsoft.AspNetCore.Razor.TagHelpers;*@
 @*localization service for installation service
     we do not use standard nopCommerce localization because database is not installed yet
     locale resources for installation process are stored into \App_Data\Localization\Installation directory*@
@@ -150,10 +145,6 @@
 
 <script>
     var connectionInfo = connectionInfo || {};
-     //$(document).ready(function () {
-         //connectionInfo["provider_postgresql"] = "postgreSqlConnectionInfo";
-         connectionInfo["provider_postgresql"] = $('#postgreSqlConnectionInfo').html();
-         $('#postgreSqlConnectionInfo').html('');
-     //});
-    
+    connectionInfo["provider_postgresql"] = $('#postgreSqlConnectionInfo').html();
+    $('#postgreSqlConnectionInfo').html('');
 </script>

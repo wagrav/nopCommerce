@@ -8,13 +8,13 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Extensions;
+using Nop.Plugin.Data.PostgreSQL.Data.Extensions;
 
 namespace Nop.Plugin.Data.PostgreSQL.Data
 {
     /// <summary>
     /// Represents SQL Server data provider
     /// </summary>
-    /// <param name="tablename">Used table name</param>
     class PostgreSQLDataProvider : IDataProvider
     {
         #region Methods
@@ -22,14 +22,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <summary>
         /// Initialize database
         /// </summary>
-        /// <param name="tablename">Used table name</param>
-        public virtual void InitializeDatabase() //__(string tablename)
+        public virtual void InitializeDatabase()
         {
             var context = EngineContext.Current.Resolve<IDbContext>();
 
             //check some of table names to ensure that we have nopCommerce 2.00+ installed
             var tableNamesToValidate = new List<string> { "Customer", "Discount", "Order", "Product", "ShoppingCartItem" };
-            var query = $"SELECT table_name AS \"Value\" FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{context.DbName()}'";
             var existingTableNames = context
                 .QueryFromSql<StringQueryType>(
                     $"SELECT table_name AS \"Value\" FROM INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE' and table_catalog = '{context.DbName()}'")
@@ -41,15 +39,13 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
             var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
 
             //create tables
-            //EngineContext.Current.Resolve<IRelationalDatabaseCreator>().CreateTables();
-            //(context as DbContext).Database.EnsureCreated();
             context.ExecuteSqlScript(context.GenerateCreateScript());
 
             //create indexes
-            //context.ExecuteSqlScriptFromFile(fileProvider.MapPath(NopDataDefaults.SqlServerIndexesFilePath));
+            context.ExecutePostgreSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlIndexesFilePath));
 
             //create stored procedures 
-            //context.ExecuteSqlScriptFromFile(fileProvider.MapPath(NopDataDefaults.SqlServerStoredProceduresFilePath));
+            context.ExecutePostgreSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlStoredProceduresFilePath));
         }
 
         /// <summary>

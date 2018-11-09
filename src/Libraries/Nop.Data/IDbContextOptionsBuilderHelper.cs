@@ -11,11 +11,6 @@ namespace Nop.Data
     public interface IDbContextOptionsBuilderHelper
     {
         /// <summary>
-        /// Get or set the data provider type.
-        /// </summary>
-        string DataProvider { get; }
-
-        /// <summary>
         /// Configure db context options.
         /// </summary>
         /// <param name="optionsBuilder">DbContextOptionsBuilder</param>
