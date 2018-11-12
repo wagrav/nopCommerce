@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,15 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
 
         private readonly CatalogSettings _catalogSettings;
         private readonly IDbContext _dbContext;
+        private readonly ILanguageService _languageService;
+        private readonly IRepository<AclRecord> _aclRepository;
+        private readonly IRepository<LocalizedProperty> _localizedPropertyRepository;
+        private readonly IRepository<Product> _productRepository;
+        private readonly IRepository<ProductSpecificationAttribute> _productSpecificationAttributeRepository;
+        private readonly IRepository<SpecificationAttributeOption> _specificationAttributeOptionRepository;
+        private readonly IRepository<StoreMapping> _storeMappingRepository;
         private readonly IWorkContext _workContext;
+        
 
         #endregion
 
@@ -47,11 +56,14 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             IProductAttributeService productAttributeService,
             IRepository<AclRecord> aclRepository,
             IRepository<CrossSellProduct> crossSellProductRepository,
+            IRepository<LocalizedProperty> localizedPropertyRepository,
             IRepository<Product> productRepository,
             IRepository<ProductPicture> productPictureRepository,
             IRepository<ProductReview> productReviewRepository,
+            IRepository<ProductSpecificationAttribute> productSpecificationAttributeRepository,
             IRepository<ProductWarehouseInventory> productWarehouseInventoryRepository,
             IRepository<RelatedProduct> relatedProductRepository,
+            IRepository<SpecificationAttributeOption> specificationAttributeOptionRepository,
             IRepository<StockQuantityHistory> stockQuantityHistoryRepository,
             IRepository<StoreMapping> storeMappingRepository,
             IRepository<TierPrice> tierPriceRepository,
@@ -86,6 +98,13 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
         {
             _catalogSettings = catalogSettings;
             _dbContext = dbContext;
+            _languageService = languageService;
+            _aclRepository = aclRepository;
+            _localizedPropertyRepository = localizedPropertyRepository;
+            _productRepository = productRepository;
+            _productSpecificationAttributeRepository = productSpecificationAttributeRepository;
+            _specificationAttributeOptionRepository = specificationAttributeOptionRepository;
+            _storeMappingRepository = storeMappingRepository;
             _workContext = workContext;
         }
 
@@ -156,160 +175,284 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             bool? overridePublished = null)
         {
             filterableSpecificationAttributeOptionIds = new List<int>();
-
-            //validate "categoryIds" parameter
-            if (categoryIds != null && categoryIds.Contains(0))
-                categoryIds.Remove(0);
-
-            //Access control list. Allowed customer roles
-            var allowedCustomerRolesIds = _workContext.CurrentCustomer.GetCustomerRoleIds();
-
-            //pass category identifiers as comma-delimited string
-            var commaSeparatedCategoryIds = categoryIds == null ? string.Empty : string.Join(",", categoryIds);
-
-            //pass customer role identifiers as comma-delimited string
-            var commaSeparatedAllowedCustomerRoleIds = string.Join(",", allowedCustomerRolesIds);
-
-            //some databases don't support int.MaxValue
-            if (pageSize == int.MaxValue)
-                pageSize = int.MaxValue - 1;
-
-            var query = new StringBuilder();
-            query.AppendLine(@"
-SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
-SELECT p.* 
-FROM Product p");
-
-            var filter = new StringBuilder();
-            filter.AppendLine(" WHERE p.Deleted = 0");
-
-            if (!string.IsNullOrEmpty(keywords))
+            //products
+            var query = _productRepository.Table;
+            query = query.Where(p => !p.Deleted);
+            if (!overridePublished.HasValue)
             {
-                filter.AppendLine($"AND (p.Name LIKE '%{keywords}%'");
-
-                if (searchSku) filter.Append($" OR p.Sku = '{keywords}'");
-
-                filter.Append(")");
+                //process according to "showHidden"
+                if (!showHidden)
+                {
+                    query = query.Where(p => p.Published);
+                }
+            }
+            else if (overridePublished.Value)
+            {
+                //published only
+                query = query.Where(p => p.Published);
+            }
+            else if (!overridePublished.Value)
+            {
+                //unpublished only
+                query = query.Where(p => !p.Published);
+            }
+            if (visibleIndividuallyOnly)
+            {
+                query = query.Where(p => p.VisibleIndividually);
+            }
+            //The function 'CurrentUtcDateTime' is not supported by SQL Server Compact. 
+            //That's why we pass the date value
+            var nowUtc = DateTime.UtcNow;
+            if (markedAsNewOnly)
+            {
+                query = query.Where(p => p.MarkAsNew);
+                query = query.Where(p =>
+                    (!p.MarkAsNewStartDateTimeUtc.HasValue || p.MarkAsNewStartDateTimeUtc.Value < nowUtc) &&
+                    (!p.MarkAsNewEndDateTimeUtc.HasValue || p.MarkAsNewEndDateTimeUtc.Value > nowUtc));
+            }
+            if (productType.HasValue)
+            {
+                var productTypeId = (int)productType.Value;
+                query = query.Where(p => p.ProductTypeId == productTypeId);
             }
 
-            if (categoryIds != null && categoryIds.Any())
+            if (priceMin.HasValue)
             {
-                query.AppendLine("INNER JOIN Product_Category_Mapping pcm ON p.Id = pcm.ProductId");
-                filter.AppendLine($"AND pcm.CategoryId IN ({commaSeparatedCategoryIds})");
-
-                if (featuredProducts.HasValue)
-                    filter.AppendLine($"AND pcm.IsFeaturedProduct = {(featuredProducts.Value ? 1 : 0)}");
+                //min price
+                query = query.Where(p => p.Price >= priceMin.Value);
             }
-
-            if (manufacturerId > 0)
+            if (priceMax.HasValue)
             {
-                query.AppendLine("INNER JOIN Product_Manufacturer_Mapping pmm ON p.Id = pmm.ProductId");
-                filter.AppendLine($"AND pmm.ManufacturerId = {manufacturerId}");
-
-                if (featuredProducts.HasValue)
-                    filter.AppendLine($"AND pmm.IsFeaturedProduct = {(featuredProducts.Value ? 1 : 0)}");
+                //max price
+                query = query.Where(p => p.Price <= priceMax.Value);
             }
-
-            if (vendorId > 0) filter.AppendLine($"AND p.VendorId = {vendorId}");
-
-            if (warehouseId > 0)
-            {
-                filter.AppendLine($@"AND  
-			    (
-				    (p.UseMultipleWarehouses = 0 AND p.WarehouseId = {warehouseId})
-				    OR
-				    (p.UseMultipleWarehouses > 0 AND EXISTS (SELECT 1 FROM ProductWarehouseInventory pwi
-					    WHERE pwi.WarehouseId = {warehouseId} AND pwi.ProductId = p.Id))
-			    )");
-            }
-
-            if (productType != null) filter.AppendLine($"AND p.ProductTypeId = {(int)productType}");
-
-            if (visibleIndividuallyOnly) filter.AppendLine("AND p.VisibleIndividually = 1");
-
-            if (markedAsNewOnly) filter.AppendLine(@"AND p.MarkAsNew = 1
-		        AND (UTC_TIMESTAMP() BETWEEN IFNULL(p.MarkAsNewStartDateTimeUtc, '1900-1-1') and IFNULL(p.MarkAsNewEndDateTimeUtc, '2999-1-1'))");
-
-            if (productTagId != 0)
-            {
-                query.AppendLine("INNER JOIN Product_ProductTag_Mapping pptm ON p.Id = pptm.Product_Id");
-                filter.AppendLine($"AND pptm.ProductTag_Id = {productTagId}");
-            }
-
-            if (overridePublished == null && !showHidden) filter.AppendLine("AND p.Published = 1");
-            else if (overridePublished.HasValue && overridePublished.Value) filter.AppendLine("AND p.Published = 1");
-            else if (overridePublished.HasValue && !overridePublished.Value) filter.AppendLine("AND p.Published = 0");
-
             if (!showHidden)
             {
-                filter.AppendLine(@"AND p.Deleted = 0
-                    AND(UTC_TIMESTAMP() BETWEEN IFNULL(p.AvailableStartDateTimeUtc, '1900-1-1') and IFNULL(p.AvailableEndDateTimeUtc, '2999-1-1'))");
+                //available dates
+                query = query.Where(p =>
+                    (!p.AvailableStartDateTimeUtc.HasValue || p.AvailableStartDateTimeUtc.Value < nowUtc) &&
+                    (!p.AvailableEndDateTimeUtc.HasValue || p.AvailableEndDateTimeUtc.Value > nowUtc));
             }
 
-            if (priceMin != null) filter.AppendLine($"AND p.Price >= {priceMin}");
-            if (priceMax != null) filter.AppendLine($"AND p.Price <= {priceMax}");
-
-            if (!_catalogSettings.IgnoreAcl && !showHidden && allowedCustomerRolesIds != null && allowedCustomerRolesIds.Any())
+            //searching by keyword
+            if (!string.IsNullOrWhiteSpace(keywords))
             {
-                filter.AppendLine($@"AND (p.SubjectToAcl = 0 OR 
-                    EXISTS (
-			            SELECT 1
-					    FROM AclRecord acl
-					    WHERE acl.EntityId = p.Id AND acl.EntityName = 'Product' 
-                            AND acl.CustomerRoleId IN ({commaSeparatedAllowedCustomerRoleIds})
-			        ))");
-            }
-
-            if (!_catalogSettings.IgnoreStoreLimitations && storeId > 0)
-            {
-                filter.AppendLine($@"AND (p.LimitedToStores = 0 OR EXISTS (
-			        SELECT 1 FROM StoreMapping sm
-			        WHERE sm.EntityId = p.Id AND sm.EntityName = 'Product' and sm.StoreId={storeId}
-			        ))");
-            }
-
-            var orderBySql = string.Empty;
-            switch (orderBy)
-            {
-                case ProductSortingEnum.NameAsc:
-                    orderBySql = " p.Name ASC";
-                    break;
-                case ProductSortingEnum.NameDesc:
-                    orderBySql = " p.Name DESC";
-                    break;
-                case ProductSortingEnum.PriceAsc:
-                    orderBySql = " p.Price ASC";
-                    break;
-                case ProductSortingEnum.PriceDesc:
-                    orderBySql = " p.Price ASC";
-                    break;
-                case ProductSortingEnum.CreatedOn:
-                    orderBySql = " p.CreatedOnUtc DESC";
-                    break;
-                default:
-                    if (categoryIds?.Count > 0) orderBySql = " pcm.DisplayOrder ASC";
-                    if (manufacturerId > 0)
+                //search by keyword
+                var searchLocalizedValue = false;
+                if (languageId > 0)
+                {
+                    if (showHidden)
                     {
-                        if (!string.IsNullOrEmpty(orderBySql)) orderBySql = orderBySql + ", ";
-                        orderBySql = orderBySql + " pmm.DisplayOrder ASC";
+                        searchLocalizedValue = true;
                     }
-                    if (!string.IsNullOrEmpty(orderBySql)) orderBySql = orderBySql + ", ";
-                    orderBySql = orderBySql + " p.Name ASC";
-                    break;
+                    else
+                    {
+                        //ensure that we have at least two published languages
+                        var totalPublishedLanguages = _languageService.GetAllLanguages().Count;
+                        searchLocalizedValue = totalPublishedLanguages >= 2;
+                    }
+                }
+
+                query = from p in query
+                        join lp in _localizedPropertyRepository.Table on p.Id equals lp.EntityId into p_lp
+                        from lp in p_lp.DefaultIfEmpty()
+                        from mapping in p.ProductProductTagMappings.DefaultIfEmpty()
+                        where (p.Name.Contains(keywords)) ||
+                              (searchDescriptions && p.ShortDescription.Contains(keywords)) ||
+                              (searchDescriptions && p.FullDescription.Contains(keywords)) ||
+                              //manufacturer part number
+                              (searchManufacturerPartNumber && p.ManufacturerPartNumber == keywords) ||
+                              //SKU (exact match)
+                              (searchSku && p.Sku == keywords) ||
+                              //product tags (exact match)
+                              (searchProductTags && mapping.ProductTag.Name == keywords) ||
+                              //localized values
+                              (searchLocalizedValue && lp.LanguageId == languageId && lp.LocaleKeyGroup == "Product" &&
+                               lp.LocaleKey == "Name" && lp.LocaleValue.Contains(keywords)) ||
+                              (searchDescriptions && searchLocalizedValue && lp.LanguageId == languageId &&
+                               lp.LocaleKeyGroup == "Product" && lp.LocaleKey == "ShortDescription" &&
+                               lp.LocaleValue.Contains(keywords)) ||
+                              (searchDescriptions && searchLocalizedValue && lp.LanguageId == languageId &&
+                               lp.LocaleKeyGroup == "Product" && lp.LocaleKey == "FullDescription" &&
+                               lp.LocaleValue.Contains(keywords))
+                        select p;
             }
 
-            filter.AppendLine($"ORDER BY {orderBySql}");
+            if (!showHidden && !_catalogSettings.IgnoreAcl)
+            {
+                //ACL (access control list)
+                //Access control list. Allowed customer roles
+                var allowedCustomerRolesIds = _workContext.CurrentCustomer.GetCustomerRoleIds();
 
-            query.Append(filter);
-            query.Append(";");
-            query.AppendLine("COMMIT ;");
+                //pass customer role identifiers as comma-delimited string
+                query = from p in query
+                        join acl in _aclRepository.Table
+                            on new { c1 = p.Id, c2 = "Product" } equals new { c1 = acl.EntityId, c2 = acl.EntityName } into p_acl
+                        from acl in p_acl.DefaultIfEmpty()
+                        where !p.SubjectToAcl || allowedCustomerRolesIds.Contains(acl.CustomerRoleId)
+                        select p;
+            }
 
-            var queryable = _dbContext.EntityFromSql<Product>(query.ToString()).AsNoTracking();
-            var totalRecords = queryable.Count();
-            var products = queryable.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            if (storeId > 0 && !_catalogSettings.IgnoreStoreLimitations)
+            {
+                //Store mapping
+                query = from p in query
+                        join sm in _storeMappingRepository.Table
+                            on new { c1 = p.Id, c2 = "Product" } equals new { c1 = sm.EntityId, c2 = sm.EntityName } into p_sm
+                        from sm in p_sm.DefaultIfEmpty()
+                        where !p.LimitedToStores || storeId == sm.StoreId
+                        select p;
+            }
 
-            //return products
-            return new PagedList<Product>(products, pageIndex, pageSize, totalRecords);
+            //category filtering
+            if (categoryIds != null && categoryIds.Any())
+            {
+                query = from p in query
+                        from pc in p.ProductCategories.Where(pc => categoryIds.Contains(pc.CategoryId))
+                        where (!featuredProducts.HasValue || featuredProducts.Value == pc.IsFeaturedProduct)
+                        select p;
+            }
+
+            //manufacturer filtering
+            if (manufacturerId > 0)
+            {
+                query = from p in query
+                        from pm in p.ProductManufacturers.Where(pm => pm.ManufacturerId == manufacturerId)
+                        where (!featuredProducts.HasValue || featuredProducts.Value == pm.IsFeaturedProduct)
+                        select p;
+            }
+
+            //vendor filtering
+            if (vendorId > 0)
+            {
+                query = query.Where(p => p.VendorId == vendorId);
+            }
+
+            //warehouse filtering
+            if (warehouseId > 0)
+            {
+                var manageStockInventoryMethodId = (int)ManageInventoryMethod.ManageStock;
+                query = query.Where(p =>
+                        //"Use multiple warehouses" enabled
+                        //we search in each warehouse
+                        (p.ManageInventoryMethodId == manageStockInventoryMethodId &&
+                         p.UseMultipleWarehouses &&
+                         p.ProductWarehouseInventory.Any(pwi => pwi.WarehouseId == warehouseId))
+                        ||
+                        //"Use multiple warehouses" disabled
+                        //we use standard "warehouse" property
+                        ((p.ManageInventoryMethodId != manageStockInventoryMethodId ||
+                          !p.UseMultipleWarehouses) &&
+                         p.WarehouseId == warehouseId));
+            }
+
+            //related products filtering
+            //if (relatedToProductId > 0)
+            //{
+            //    query = from p in query
+            //            join rp in _relatedProductRepository.Table on p.Id equals rp.ProductId2
+            //            where (relatedToProductId == rp.ProductId1)
+            //            select p;
+            //}
+
+            //tag filtering
+            if (productTagId > 0)
+            {
+                query = from p in query
+                        from pt in p.ProductProductTagMappings.Where(mapping => mapping.ProductTagId == productTagId)
+                        select p;
+            }
+
+            //get filterable specification attribute option identifier
+            if (loadFilterableSpecificationAttributeOptionIds)
+            {
+                var querySpecs = from p in query
+                                 join psa in _productSpecificationAttributeRepository.Table on p.Id equals psa.ProductId
+                                 where psa.AllowFiltering
+                                 select psa.SpecificationAttributeOptionId;
+                //only distinct attributes
+                filterableSpecificationAttributeOptionIds = querySpecs.Distinct().ToList();
+            }
+
+            //search by specs
+            if (filteredSpecs != null && filteredSpecs.Any())
+            {
+                var filteredAttributes = _specificationAttributeOptionRepository.Table
+                    .Where(sao => filteredSpecs.Contains(sao.Id)).Select(sao => sao.SpecificationAttributeId).Distinct();
+
+                query = query.Where(p => !filteredAttributes.Except
+                (
+                    _specificationAttributeOptionRepository.Table.Where(
+                            sao => p.ProductSpecificationAttributes.Where(
+                                    psa => psa.AllowFiltering && filteredSpecs.Contains(psa.SpecificationAttributeOptionId))
+                                .Select(psa => psa.SpecificationAttributeOptionId).Contains(sao.Id))
+                        .Select(sao => sao.SpecificationAttributeId).Distinct()
+                ).Any());
+            }
+
+            //only distinct products (group by ID)
+            //if we use standard Distinct() method, then all fields will be compared (low performance)
+            //it'll not work in SQL Server Compact when searching products by a keyword)
+            query = from p in query
+                    group p by p.Id
+                into pGroup
+                    orderby pGroup.Key
+                    select pGroup.FirstOrDefault();
+
+            //sort products
+            if (orderBy == ProductSortingEnum.Position && categoryIds != null && categoryIds.Any())
+            {
+                //category position
+                var firstCategoryId = categoryIds[0];
+                query = query.OrderBy(p =>
+                    p.ProductCategories.FirstOrDefault(pc => pc.CategoryId == firstCategoryId).DisplayOrder);
+            }
+            else if (orderBy == ProductSortingEnum.Position && manufacturerId > 0)
+            {
+                //manufacturer position
+                query =
+                    query.OrderBy(p =>
+                        p.ProductManufacturers.FirstOrDefault(pm => pm.ManufacturerId == manufacturerId).DisplayOrder);
+            }
+            else if (orderBy == ProductSortingEnum.Position)
+            {
+                //otherwise sort by name
+                query = query.OrderBy(p => p.Name);
+            }
+            else if (orderBy == ProductSortingEnum.NameAsc)
+            {
+                //Name: A to Z
+                query = query.OrderBy(p => p.Name);
+            }
+            else if (orderBy == ProductSortingEnum.NameDesc)
+            {
+                //Name: Z to A
+                query = query.OrderByDescending(p => p.Name);
+            }
+            else if (orderBy == ProductSortingEnum.PriceAsc)
+            {
+                //Price: Low to High
+                query = query.OrderBy(p => p.Price);
+            }
+            else if (orderBy == ProductSortingEnum.PriceDesc)
+            {
+                //Price: High to Low
+                query = query.OrderByDescending(p => p.Price);
+            }
+            else if (orderBy == ProductSortingEnum.CreatedOn)
+            {
+                //creation date
+                query = query.OrderByDescending(p => p.CreatedOnUtc);
+            }
+            else
+            {
+                //actually this code is not reachable
+                query = query.OrderBy(p => p.Name);
+            }
+
+            var products = new PagedList<Product>(query, pageIndex, pageSize);
+
+            return products;
         }
         
         #endregion
