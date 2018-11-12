@@ -280,7 +280,7 @@ namespace Nop.Web.Framework.Infrastructure
 
             var dp = new EfDataProviderManager().DataProvider;
 
-            if (dp.DataProviderName.Equals("SqlServer", StringComparison.CurrentCultureIgnoreCase))
+            if (dp.GetType().Assembly == typeof(SqlServerDataProvider).Assembly)
                 return;
 
             var dbDependencyTypes = typeFinder.FindClassesOfType<IDbDependencyRegistrar>();
@@ -302,36 +302,23 @@ namespace Nop.Web.Framework.Infrastructure
             {
                 var dp = new EfDataProviderManager().DataProvider;
 
-                if (dp.DataProviderName.Equals("SqlServer", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
-                        .As<IDbContext>().InstancePerLifetimeScope();
-                }
-                else
-                {
-                    var dbDependencyTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
-                    var dbDependencyType = dbDependencyTypes.FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
+                var dbContextTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
+                var dbContextType = dbContextTypes.FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
 
-                    if (dbDependencyType == null || PluginManager.InstalledPlugins.All(p => p.ReferencedAssembly != dbDependencyType.Assembly))
-                    {
-                        return;
-                    }
-                    var dbDependency = (IDbContextRegistrar)Activator.CreateInstance(dbDependencyType);
-                    dbDependency.Register(builder, typeFinder, config);
+                if (dbContextType == null || PluginManager.InstalledPlugins.All(p => p.ReferencedAssembly != dbContextType.Assembly)
+                    & dbContextType.Assembly != typeof(SqlServerDataProvider).Assembly)
+                {
+                    return;
                 }
+
+                var dbContext = (IDbContextRegistrar)Activator.CreateInstance(dbContextType);
+                dbContext.Register(builder, typeFinder, config);
             }
             else
             {
+                //if database not installed use only base NopObjectContext
                 builder.Register(context => new NopObjectContext(context.Resolve<DbContextOptions<NopObjectContext>>()))
                     .As<IDbContext>().InstancePerLifetimeScope();
-
-                var dbDependencyTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
-                foreach (var dbDependencyType in dbDependencyTypes)
-                {
-                    var dbDependency = (IDbContextRegistrar)Activator.CreateInstance(dbDependencyType);
-                    dbDependency.Register(builder, typeFinder, config);
-                }
-
             }
         }
 

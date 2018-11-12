@@ -28,25 +28,12 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            if (dataSettings.DataProvider.Equals("SqlServerDataProvider", StringComparison.CurrentCultureIgnoreCase))
-            {
-                //register copitns for Ms SqlServer
-                var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
-
-                if (nopConfig.UseRowNumberForPaging)
-                    dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
-                else
-                    dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
-            }
-            else
-            {
-                var dp = new EfDataProviderManager().DataProvider;
-                var typeFinder = new WebAppTypeFinder();
-                var dbContextType = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>()
-                                    .FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
-                var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
-                dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
-            }
+            var dp = new EfDataProviderManager().DataProvider;
+            var typeFinder = new WebAppTypeFinder();
+            var dbContextType = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>()
+                                .FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
+            var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
+            dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
 
         }
     }

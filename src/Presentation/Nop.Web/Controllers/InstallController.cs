@@ -213,7 +213,7 @@ namespace Nop.Web.Controllers
                 AdminEmail = "admin@yourStore.com",
                 InstallSampleData = false,
                 DatabaseConnectionString = "",
-                DataProvider = "sql",//DataProviderType.SqlServer,
+                DataProvider = typeof(SqlServerDataProvider).Name,
                 //fast installation service does not support SQL compact
                 DisableSampleDataOption = _config.DisableSampleDataDuringInstallation,
                 SqlAuthenticationType = "sqlauthentication",
@@ -236,9 +236,23 @@ namespace Nop.Web.Controllers
             var bdPluginsTypes = typeFinder.FindClassesOfType<IDbPlugin>().ToList();
             foreach (var bdPluginType in bdPluginsTypes)
             {
-                var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
-                dbPlugins.Add(bdPlugin);
-                providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+                //TODO Solve problem with IInstallationLocalizationService in DBPlugin`s
+                //var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
+                //dbPlugins.Add(bdPlugin);
+                //providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+
+                try
+                {
+                    var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType, _locService);
+                    dbPlugins.Add(bdPlugin);
+                    providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+                }
+                catch (Exception)
+                {
+                    var bdPlugin = (IDbPlugin)Activator.CreateInstance(bdPluginType);
+                    dbPlugins.Add(bdPlugin);
+                    providerTypes.Add(bdPlugin.DataProviderName, bdPlugin.GetType());
+                }
             }
 
             model.DbPlugins = dbPlugins;
@@ -254,8 +268,17 @@ namespace Nop.Web.Controllers
 
             if (model.DatabaseConnectionString != null)
                 model.DatabaseConnectionString = model.DatabaseConnectionString.Trim();
-
-            var bdPlugin = (IDbPlugin)Activator.CreateInstance(providerTypes[model.DataProvider], _locService);
+            //TODO Solve problem with IInstallationLocalizationService in DBPlugin`s
+            //var bdPlugin = (IDbPlugin)Activator.CreateInstance(providerTypes[model.DataProvider], _locService);
+            IDbPlugin bdPlugin;
+            try
+            {
+                bdPlugin = (IDbPlugin)Activator.CreateInstance(providerTypes[model.DataProvider], _locService);
+            }
+            catch (Exception)
+            {
+                bdPlugin = (IDbPlugin)Activator.CreateInstance(providerTypes[model.DataProvider]);
+            }
 
             bdPlugin.CheckModel(model, ModelState);
 

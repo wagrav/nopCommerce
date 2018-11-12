@@ -2,14 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
-using Nop.Data;
 
-namespace Nop.Plugin.Data.PostgreSQL.Data
+namespace Nop.Data
 {
     /// <summary>
     /// MySQL db context options helper to use MySQL for db context.
     /// </summary>
-    public class PostgreSQLDbContextOptionsBuilderHelper : IDbContextOptionsBuilderHelper
+    public class SqlServerDbContextOptionsBuilderHelper : IDbContextOptionsBuilderHelper
     {
         /// <summary>
         /// Configure db context options to use PostgreSQL.
@@ -20,12 +19,16 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <param name="dataSettings">DataSettings</param>
         public void Configure(DbContextOptionsBuilder optionsBuilder, IServiceCollection services, NopConfig nopConfig, DataSettings dataSettings)
         {
-            var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
-
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            dbContextOptionsBuilder.UseNpgsql(dataSettings.DataConnectionString);
+            //register copitns for Ms SqlServer
+            var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
+
+            if (nopConfig.UseRowNumberForPaging)
+                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
+            else
+                dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
         }
     }
 }
