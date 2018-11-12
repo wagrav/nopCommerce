@@ -21,6 +21,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
         private readonly IStaticCacheManager _staticCacheManager;
         private readonly IRepository<Product> _productRepository;
         private readonly IRepository<StoreMapping> _storeMappingRepository;
+        private readonly IDbContext _dbContext;
 
         #endregion
 
@@ -50,6 +51,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             _staticCacheManager = staticCacheManager;
             _productRepository = productRepository;
             _storeMappingRepository = storeMappingRepository;
+            _dbContext = dbContext;
         }
 
         #endregion
@@ -61,24 +63,16 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
         /// </summary>
         /// <param name="storeId">Store identifier</param>
         /// <returns>Dictionary of "product tag ID : product count"</returns>
-        /*protected override Dictionary<int, int> GetProductCount(int storeId)
+        protected override Dictionary<int, int> GetProductCount(int storeId)
         {
             var key = string.Format(NopCatalogDefaults.ProductTagCountCacheKey, storeId);
             return _staticCacheManager.Get(key, () =>
             {
-                return (from pt in _productTagRepository.Table
-                        join ptm in _productProductTagMappingRepository.Table on pt.Id equals ptm.ProductTagId
-                        join p in _productRepository.Table on ptm.ProductId equals p.Id
-                        where !p.Deleted && p.Published &&
-                              (storeId == 0 || !p.LimitedToStores || (from sm in _storeMappingRepository.Table
-                                   where sm.EntityId == p.Id && sm.EntityName == "Product" && sm.StoreId == storeId
-                                   select sm.EntityId).Any())
-                        select new { ProductTagId = pt.Id, ProductId = p.Id }).GroupBy(arg => arg.ProductTagId)
-                    .AsNoTracking().ToList()
-                    .ToDictionary(item => item.Key, item => item.Count());
+                return _dbContext.QueryFromSql<ProductTagWithCount>($"SELECT * From producttagcountloadall({storeId})")
+                    .ToDictionary(item => item.ProductTagId, item => item.ProductCount);
             });
         }
-        */
+
         #endregion
     }
 }

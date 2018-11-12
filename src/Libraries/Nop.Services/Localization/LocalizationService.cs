@@ -414,7 +414,7 @@ namespace Nop.Services.Localization
         /// <param name="updateExistingResources">A value indicating whether to update existing resources</param>
         public virtual void ImportResourcesFromXml(Language language, string xml, bool updateExistingResources = true)
         {
-            if (language == null)
+            /*if (language == null)
                 throw new ArgumentNullException(nameof(language));
 
             if (string.IsNullOrEmpty(xml))
@@ -455,6 +455,44 @@ namespace Nop.Services.Localization
             //long-running query. specify timeout (600 seconds)
             _dbContext.ExecuteSqlCommand("EXEC [LanguagePackImport] @LanguageId, @XmlPackage, @UpdateExistingResources",
                 false, 600, pLanguageId, pXmlPackage, pUpdateExistingResources);
+
+            //clear cache
+            _cacheManager.RemoveByPattern(NopLocalizationDefaults.LocaleStringResourcesPatternCacheKey);*/
+
+            if (language == null)
+                throw new ArgumentNullException(nameof(language));
+
+            if (string.IsNullOrEmpty(xml))
+                return;
+
+            //SQL 2005 insists that your XML schema encoding be in UTF-16.
+            //Otherwise, you'll get "XML parsing: line 1, character XXX, unable to switch the encoding"
+            //so let's remove XML declaration
+            var inDoc = new XmlDocument();
+            inDoc.LoadXml(xml);
+            var sb = new StringBuilder();
+            using (var xWriter = XmlWriter.Create(sb, new XmlWriterSettings { OmitXmlDeclaration = true }))
+            {
+                inDoc.Save(xWriter);
+                xWriter.Close();
+            }
+
+            var outDoc = new XmlDocument();
+            outDoc.LoadXml(sb.ToString());
+
+            var xnList = outDoc.SelectNodes("/Language/LocaleResource");
+            var resources = new List<LocaleStringResource>();
+            foreach (XmlNode xn in xnList)
+            {
+                resources.Add(new LocaleStringResource
+                {
+                    LanguageId = language.Id,
+                    ResourceName = xn.Attributes["Name"].InnerText,
+                    ResourceValue = xn["Value"].InnerText
+                });
+            }
+
+            _lsrRepository.Insert(resources);
 
             //clear cache
             _cacheManager.RemoveByPattern(NopLocalizationDefaults.LocaleStringResourcesPatternCacheKey);

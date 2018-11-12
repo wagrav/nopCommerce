@@ -1,18 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Nop.Core;
-using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
 using Nop.Data;
 using Nop.Plugin.Data.PostgreSQL.Data;
-using Nop.Services.Cms;
-using Nop.Services.Configuration;
-using Nop.Services.Localization;
-using Nop.Services.Media;
-using Nop.Web.Framework.Infrastructure;
 using Nop.Web.Infrastructure.Installation;
 using Npgsql;
 
