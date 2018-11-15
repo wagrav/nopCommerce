@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Autofac;
-using Autofac.Builder;
-using Autofac.Core;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core;
@@ -84,7 +80,6 @@ namespace Nop.Web.Framework.Infrastructure
             builder.Register(context => context.Resolve<IDataProviderManager>().DataProvider).As<IDataProvider>().InstancePerDependency();
 
             InitDbContext(builder, typeFinder, config);
-
 
             //repositories
             builder.RegisterGeneric(typeof(EfRepository<>)).As(typeof(IRepository<>)).InstancePerLifetimeScope();
@@ -242,7 +237,6 @@ namespace Nop.Web.Framework.Infrastructure
             //installation service
             if (!DataSettingsManager.DatabaseIsInstalled)
             {
-
                 if (config.UseFastInstallationService)
                     builder.RegisterType<SqlFileInstallationService>().As<IInstallationService>().InstancePerLifetimeScope();
                 else
@@ -265,7 +259,6 @@ namespace Nop.Web.Framework.Infrastructure
             InitDbDepedency(builder, typeFinder, config);
         }
 
-
         /// <summary>
         /// Init dependencies for database
         /// </summary>
@@ -274,7 +267,6 @@ namespace Nop.Web.Framework.Infrastructure
         /// <param name="config">Config</param>
         private void InitDbDepedency(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
         {
-
             if (!DataSettingsManager.DatabaseIsInstalled)
                 return;
 
@@ -297,7 +289,6 @@ namespace Nop.Web.Framework.Infrastructure
         /// <param name="config">Config</param>
         private void InitDbContext(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
         {
-
             if (DataSettingsManager.DatabaseIsInstalled)
             {
                 var dp = new EfDataProviderManager().DataProvider;
@@ -305,8 +296,7 @@ namespace Nop.Web.Framework.Infrastructure
                 var dbContextTypes = typeFinder.FindClassesOfType<IDbContextRegistrar>();
                 var dbContextType = dbContextTypes.FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
 
-                if (dbContextType == null || PluginManager.InstalledPlugins.All(p => p.ReferencedAssembly != dbContextType.Assembly)
-                    & dbContextType.Assembly != typeof(SqlServerDataProvider).Assembly)
+                if (dbContextType == null || (PluginManager.ReferencedPlugins.All(p => p.Installed && p.ReferencedAssembly != dbContextType.Assembly) && dbContextType.Assembly != typeof(SqlServerDataProvider).Assembly))
                 {
                     return;
                 }
@@ -322,14 +312,9 @@ namespace Nop.Web.Framework.Infrastructure
             }
         }
 
-
         /// <summary>
         /// Gets order of this dependency registrar implementation
         /// </summary>
-        public int Order
-        {
-            get { return 0; }
-        }
+        public int Order => 0;
     }
-
 }

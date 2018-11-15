@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Configuration;
@@ -14,7 +14,6 @@ using Nop.Core.Data;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Security;
 using Nop.Core.Plugins;
-using Nop.Data;
 using Nop.Data.Extensions;
 using Nop.Services.Configuration;
 using Nop.Services.Events;
@@ -29,8 +28,6 @@ namespace Nop.Services.Localization
     {
         #region Fields
 
-        private readonly IDataProvider _dataProvider;
-        private readonly IDbContext _dbContext;
         private readonly IEventPublisher _eventPublisher;
         private readonly ILanguageService _languageService;
         private readonly ILocalizedEntityService _localizedEntityService;
@@ -45,8 +42,7 @@ namespace Nop.Services.Localization
 
         #region Ctor
 
-        public LocalizationService(IDataProvider dataProvider,
-            IDbContext dbContext,
+        public LocalizationService(
             IEventPublisher eventPublisher,
             ILanguageService languageService,
             ILocalizedEntityService localizedEntityService,
@@ -57,8 +53,6 @@ namespace Nop.Services.Localization
             IWorkContext workContext,
             LocalizationSettings localizationSettings)
         {
-            this._dataProvider = dataProvider;
-            this._dbContext = dbContext;
             this._eventPublisher = eventPublisher;
             this._languageService = languageService;
             this._localizedEntityService = localizedEntityService;
@@ -414,85 +408,46 @@ namespace Nop.Services.Localization
         /// <param name="updateExistingResources">A value indicating whether to update existing resources</param>
         public virtual void ImportResourcesFromXml(Language language, string xml, bool updateExistingResources = true)
         {
-            /*if (language == null)
-                throw new ArgumentNullException(nameof(language));
-
-            if (string.IsNullOrEmpty(xml))
-                return;
-
-            //SQL 2005 insists that your XML schema encoding be in UTF-16.
-            //Otherwise, you'll get "XML parsing: line 1, character XXX, unable to switch the encoding"
-            //so let's remove XML declaration
-            var inDoc = new XmlDocument();
-            inDoc.LoadXml(xml);
-            var sb = new StringBuilder();
-            using (var xWriter = XmlWriter.Create(sb, new XmlWriterSettings { OmitXmlDeclaration = true }))
-            {
-                inDoc.Save(xWriter);
-                xWriter.Close();
-            }
-
-            var outDoc = new XmlDocument();
-            outDoc.LoadXml(sb.ToString());
-            xml = outDoc.OuterXml;
-
-            //stored procedures are enabled and supported by the database.
-            var pLanguageId = _dataProvider.GetParameter();
-            pLanguageId.ParameterName = "LanguageId";
-            pLanguageId.Value = language.Id;
-            pLanguageId.DbType = DbType.Int32;
-
-            var pXmlPackage = _dataProvider.GetParameter();
-            pXmlPackage.ParameterName = "XmlPackage";
-            pXmlPackage.Value = xml;
-            pXmlPackage.DbType = DbType.Xml;
-
-            var pUpdateExistingResources = _dataProvider.GetParameter();
-            pUpdateExistingResources.ParameterName = "UpdateExistingResources";
-            pUpdateExistingResources.Value = updateExistingResources;
-            pUpdateExistingResources.DbType = DbType.Boolean;
-
-            //long-running query. specify timeout (600 seconds)
-            _dbContext.ExecuteSqlCommand("EXEC [LanguagePackImport] @LanguageId, @XmlPackage, @UpdateExistingResources",
-                false, 600, pLanguageId, pXmlPackage, pUpdateExistingResources);
-
-            //clear cache
-            _cacheManager.RemoveByPattern(NopLocalizationDefaults.LocaleStringResourcesPatternCacheKey);*/
-
             if (language == null)
                 throw new ArgumentNullException(nameof(language));
 
             if (string.IsNullOrEmpty(xml))
                 return;
 
-            //SQL 2005 insists that your XML schema encoding be in UTF-16.
-            //Otherwise, you'll get "XML parsing: line 1, character XXX, unable to switch the encoding"
-            //so let's remove XML declaration
-            var inDoc = new XmlDocument();
-            inDoc.LoadXml(xml);
-            var sb = new StringBuilder();
-            using (var xWriter = XmlWriter.Create(sb, new XmlWriterSettings { OmitXmlDeclaration = true }))
+            var localeResources = XDocument.Parse(xml).Root?.Elements("LocaleResource")
+                .Where(localeResource => !string.IsNullOrEmpty(localeResource.Attribute("Name")?.Value))
+                .Select(localeResource => KeyValuePair.Create(localeResource.Attribute("Name")?.Value,
+                    new LocaleStringResource
+                    {
+                        LanguageId = language.Id,
+                        ResourceName = localeResource.Attribute("Name")?.Value,
+                        ResourceValue = localeResource.Element("Value")?.Value
+                    })).GroupBy(p=>p.Key).ToDictionary(p => p.Key, p => p.Last().Value);
+
+            if(localeResources == null)
+                return;
+
+            if (!updateExistingResources)
             {
-                inDoc.Save(xWriter);
-                xWriter.Close();
+                _lsrRepository.Insert(localeResources.Values);
             }
-
-            var outDoc = new XmlDocument();
-            outDoc.LoadXml(sb.ToString());
-
-            var xnList = outDoc.SelectNodes("/Language/LocaleResource");
-            var resources = new List<LocaleStringResource>();
-            foreach (XmlNode xn in xnList)
+            else
             {
-                resources.Add(new LocaleStringResource
+                var existsResources = GetAllResources(language.Id)
+                    .Where(localeResource => localeResources.ContainsKey(localeResource.ResourceName))
+                    .ToList();
+
+                _lsrRepository.Insert(localeResources.Values.Where(localeResource =>
+                    existsResources.All(p => p.ResourceName != localeResource.ResourceName)));
+
+                foreach (var localeStringResource in existsResources)
                 {
-                    LanguageId = language.Id,
-                    ResourceName = xn.Attributes["Name"].InnerText,
-                    ResourceValue = xn["Value"].InnerText
-                });
-            }
+                    localeStringResource.ResourceValue =
+                        localeResources[localeStringResource.ResourceName].ResourceValue;
+                }
 
-            _lsrRepository.Insert(resources);
+                _lsrRepository.Update(existsResources);
+            }
 
             //clear cache
             _cacheManager.RemoveByPattern(NopLocalizationDefaults.LocaleStringResourcesPatternCacheKey);

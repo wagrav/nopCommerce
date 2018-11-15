@@ -8,14 +8,14 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Extensions;
-using Nop.Plugin.Data.PostgreSQL.Data.Extensions;
+using Nop.Plugin.Data.PostgreSQL.Data.Extenisions;
 
 namespace Nop.Plugin.Data.PostgreSQL.Data
 {
     /// <summary>
     /// Represents SQL Server data provider
     /// </summary>
-    class PostgreSQLDataProvider : IDataProvider
+    public class PostgreSQLDataProvider : IDataProvider
     {
         #region Methods
 
@@ -69,9 +69,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <summary>
         /// Gets a maximum length of the data for HASHBYTES functions, returns 0 if HASHBYTES function is not supported
         /// </summary>
-        public virtual int SupportedLengthOfBinaryHash => 8000; //for SQL Server 2008 and above HASHBYTES function has a limit of 8000 characters.
+        public virtual int SupportedLengthOfBinaryHash => 0;
 
-        public string DataProviderName => "PostgreSQLDataProvider";
+        /// <summary>
+        /// Gets a data provider name
+        /// </summary>
+        public string DataProviderName => "PostgreSQL";
 
         #endregion
     }

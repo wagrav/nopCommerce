@@ -1,12 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
 using Nop.Core.Infrastructure;
-using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data;
-using System;
-using System.Linq;
 
 namespace Nop.Web.Framework.Infrastructure.Extensions
 {
@@ -34,7 +33,6 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
                                 .FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
             var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
             dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
-
         }
     }
 }

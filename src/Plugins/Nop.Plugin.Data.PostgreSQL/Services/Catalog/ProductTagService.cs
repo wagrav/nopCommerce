@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using Nop.Core.Caching;
 using Nop.Core.Data;
 using Nop.Core.Domain.Catalog;
-using Nop.Core.Domain.Stores;
 using Nop.Data;
 using Nop.Services.Catalog;
 using Nop.Services.Events;
@@ -16,11 +14,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
     {
         #region Fileds
 
-        private readonly IRepository<ProductProductTagMapping> _productProductTagMappingRepository;
-        private readonly IRepository<ProductTag> _productTagRepository;
         private readonly IStaticCacheManager _staticCacheManager;
-        private readonly IRepository<Product> _productRepository;
-        private readonly IRepository<StoreMapping> _storeMappingRepository;
         private readonly IDbContext _dbContext;
 
         #endregion
@@ -34,9 +28,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             IRepository<ProductProductTagMapping> productProductTagMappingRepository,
             IRepository<ProductTag> productTagRepository,
             IStaticCacheManager staticCacheManager,
-            IUrlRecordService urlRecordService,
-            IRepository<Product> productRepository,
-            IRepository<StoreMapping> storeMappingRepository)
+            IUrlRecordService urlRecordService)
             : base(cacheManager,
                 dbContext,
                 eventPublisher,
@@ -46,11 +38,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 staticCacheManager,
                 urlRecordService)
         {
-            _productProductTagMappingRepository = productProductTagMappingRepository;
-            _productTagRepository = productTagRepository;
             _staticCacheManager = staticCacheManager;
-            _productRepository = productRepository;
-            _storeMappingRepository = storeMappingRepository;
             _dbContext = dbContext;
         }
 

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Data;
@@ -24,10 +22,9 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
 {
     public class ProductService : Nop.Services.Catalog.ProductService
     {
-        #region Fileds
+        #region Fields
 
         private readonly CatalogSettings _catalogSettings;
-        private readonly IDbContext _dbContext;
         private readonly ILanguageService _languageService;
         private readonly IRepository<AclRecord> _aclRepository;
         private readonly IRepository<LocalizedProperty> _localizedPropertyRepository;
@@ -36,7 +33,6 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
         private readonly IRepository<SpecificationAttributeOption> _specificationAttributeOptionRepository;
         private readonly IRepository<StoreMapping> _storeMappingRepository;
         private readonly IWorkContext _workContext;
-        
 
         #endregion
 
@@ -97,7 +93,6 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 localizationSettings)
         {
             _catalogSettings = catalogSettings;
-            _dbContext = dbContext;
             _languageService = languageService;
             _aclRepository = aclRepository;
             _localizedPropertyRepository = localizedPropertyRepository;
@@ -186,16 +181,11 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                     query = query.Where(p => p.Published);
                 }
             }
-            else if (overridePublished.Value)
+            else
             {
-                //published only
-                query = query.Where(p => p.Published);
+                query = query.Where(p => p.Published == overridePublished.Value);
             }
-            else if (!overridePublished.Value)
-            {
-                //unpublished only
-                query = query.Where(p => !p.Published);
-            }
+
             if (visibleIndividuallyOnly)
             {
                 query = query.Where(p => p.VisibleIndividually);
@@ -210,6 +200,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                     (!p.MarkAsNewStartDateTimeUtc.HasValue || p.MarkAsNewStartDateTimeUtc.Value < nowUtc) &&
                     (!p.MarkAsNewEndDateTimeUtc.HasValue || p.MarkAsNewEndDateTimeUtc.Value > nowUtc));
             }
+
             if (productType.HasValue)
             {
                 var productTypeId = (int)productType.Value;
@@ -221,11 +212,13 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 //min price
                 query = query.Where(p => p.Price >= priceMin.Value);
             }
+
             if (priceMax.HasValue)
             {
                 //max price
                 query = query.Where(p => p.Price <= priceMax.Value);
             }
+
             if (!showHidden)
             {
                 //available dates
@@ -257,7 +250,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                         join lp in _localizedPropertyRepository.Table on p.Id equals lp.EntityId into p_lp
                         from lp in p_lp.DefaultIfEmpty()
                         from mapping in p.ProductProductTagMappings.DefaultIfEmpty()
-                        where (p.Name.Contains(keywords)) ||
+                        where p.Name.Contains(keywords) ||
                               (searchDescriptions && p.ShortDescription.Contains(keywords)) ||
                               (searchDescriptions && p.FullDescription.Contains(keywords)) ||
                               //manufacturer part number
@@ -309,7 +302,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             {
                 query = from p in query
                         from pc in p.ProductCategories.Where(pc => categoryIds.Contains(pc.CategoryId))
-                        where (!featuredProducts.HasValue || featuredProducts.Value == pc.IsFeaturedProduct)
+                        where !featuredProducts.HasValue || featuredProducts.Value == pc.IsFeaturedProduct
                         select p;
             }
 
@@ -318,7 +311,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             {
                 query = from p in query
                         from pm in p.ProductManufacturers.Where(pm => pm.ManufacturerId == manufacturerId)
-                        where (!featuredProducts.HasValue || featuredProducts.Value == pm.IsFeaturedProduct)
+                        where !featuredProducts.HasValue || featuredProducts.Value == pm.IsFeaturedProduct
                         select p;
             }
 
@@ -380,14 +373,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 var filteredAttributes = _specificationAttributeOptionRepository.Table
                     .Where(sao => filteredSpecs.Contains(sao.Id)).Select(sao => sao.SpecificationAttributeId).Distinct();
 
-                query = query.Where(p => !filteredAttributes.Except
-                (
+                query = query.Where(p => !filteredAttributes.Except(
                     _specificationAttributeOptionRepository.Table.Where(
                             sao => p.ProductSpecificationAttributes.Where(
                                     psa => psa.AllowFiltering && filteredSpecs.Contains(psa.SpecificationAttributeOptionId))
                                 .Select(psa => psa.SpecificationAttributeOptionId).Contains(sao.Id))
-                        .Select(sao => sao.SpecificationAttributeId).Distinct()
-                ).Any());
+                        .Select(sao => sao.SpecificationAttributeId).Distinct()).Any());
             }
 
             //only distinct products (group by ID)

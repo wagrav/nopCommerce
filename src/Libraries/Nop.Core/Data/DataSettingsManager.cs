@@ -58,9 +58,6 @@ namespace Nop.Core.Data
 
                         switch (key)
                         {
-                            //case "DataProvider":
-                            //    dataSettings.DataProvider = Enum.TryParse(value, true, out DataProviderType providerType) ? providerType : DataProviderType.Unknown;
-                            //    continue;
                             case "DataProvider":
                                 dataSettings.DataProvider = value;
                                 continue;

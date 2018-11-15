@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -16,7 +15,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
 
         public override IQueryable<TEntity> EntityFromSql<TEntity>(string sql, params object[] parameters)
         {
-            return this.Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
+            return Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
         }
 
         protected override string CreateSqlWithParameters(string sql, params object[] parameters)
@@ -28,9 +27,5 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
             sql = $"SELECT * FROM {sql} ({paramstring ?? string.Empty})";
             return sql;
         }
-
     }
-
-
-
 }

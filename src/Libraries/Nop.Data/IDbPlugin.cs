@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Nop.Core.Plugins;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Nop.Data
 {

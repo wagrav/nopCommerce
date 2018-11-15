@@ -1,9 +1,8 @@
-﻿using Nop.Core;
+﻿using System;
+using System.Linq;
+using Nop.Core;
 using Nop.Core.Data;
 using Nop.Core.Infrastructure;
-using Nop.Core.Infrastructure.DependencyManagement;
-using System;
-using System.Linq;
 
 namespace Nop.Data
 {
@@ -24,18 +23,18 @@ namespace Nop.Data
                 //get current provider type from DataSettings
                 var providerName = DataSettingsManager.LoadSettings()?.DataProvider;
                 var typeFinder = new WebAppTypeFinder();
-                var providerType = typeFinder.FindClassesOfType<IDataProvider>()
-                    .FirstOrDefault(p => p.Name == providerName);
+                var provider = typeFinder.FindClassesOfType<IDataProvider>()
+                    .Select(providerType => (IDataProvider)Activator.CreateInstance(providerType))
+                    .FirstOrDefault(p => p.DataProviderName.Equals(providerName, StringComparison.CurrentCultureIgnoreCase));
 
-                if (providerType != null)
-                {
-                    // create instance of current data provider
-                    return (IDataProvider)Activator.CreateInstance(providerType);
-                }
+                if (provider == null)
+                    throw new NopException($"Not supported data provider name: '{providerName}'");
 
-                throw new NopException($"Not supported data provider name: '{providerName}'");
+                // create instance of current data provider
+                return provider;
             }
         }
+
         #endregion
     }
 }

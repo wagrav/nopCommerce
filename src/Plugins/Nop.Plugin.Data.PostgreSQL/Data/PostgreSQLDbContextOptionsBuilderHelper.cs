@@ -7,7 +7,7 @@ using Nop.Data;
 namespace Nop.Plugin.Data.PostgreSQL.Data
 {
     /// <summary>
-    /// MySQL db context options helper to use MySQL for db context.
+    /// PostgreSQL db context options helper to use PostgreSQL for db context.
     /// </summary>
     public class PostgreSQLDbContextOptionsBuilderHelper : IDbContextOptionsBuilderHelper
     {

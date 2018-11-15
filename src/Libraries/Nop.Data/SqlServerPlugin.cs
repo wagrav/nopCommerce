@@ -2,44 +2,22 @@
 using System.Data.SqlClient;
 using System.Threading;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Nop.Core.Infrastructure;
-using Nop.Core.Plugins;
-using Nop.Data;
-//using Nop.Web.Infrastructure.Installation;
 
 namespace Nop.Data
 {
-    /// <summary>
-    /// PLugin
-    /// </summary>
     public class SqlServerPlugin : IDbPlugin
     {
-        #region Fields
-
-        //TODO Solve problem with IInstallationLocalizationService in DBPlugin`s
-        //private readonly IInstallationLocalizationService _locService;
-
-        #endregion
-
-        #region Ctor
-
-        public SqlServerPlugin()//(IInstallationLocalizationService locService)
-        {
-            //this._locService = locService;
-        }
-
-        #endregion
-
-
         #region Utilities
+
         /// <summary>
         /// Create contents of connection strings used by the NpgsqlConnection class
         /// </summary>
-        /// <param name="trustedConnection">Avalue that indicates whether User ID and Password are specified in the connection (when false) or whether the current Windows account credentials are used for authentication (when true)</param>
-        /// <param name="serverName">The name or network address of the instance of PostgreSQL Server to connect to</param>
+        /// <param name="trustedConnection">A value that indicates whether User ID and Password are specified in the connection (when false) or whether the current Windows account credentials are used for authentication (when true)</param>
+        /// <param name="serverName">The name or network address of the instance of Ms Sql Server to connect to</param>
+        /// <param name="port">The server port</param>
         /// <param name="databaseName">The name of the database associated with the connection</param>
-        /// <param name="userName">The user ID to be used when connecting to PosgreSQL Server</param>
-        /// <param name="password">The password for the PosgreSQL Server account</param>
+        /// <param name="userName">The user ID to be used when connecting to Ms Sql Server</param>
+        /// <param name="password">The password for the Ms Sql Server account</param>
         /// <param name="timeout">The connection timeout</param>
         /// <returns>Connection string</returns>
         protected string CreateConnectionString(bool trustedConnection,
@@ -52,26 +30,29 @@ namespace Nop.Data
                 DataSource = serverName,
                 InitialCatalog = databaseName
             };
+
             if (!trustedConnection)
             {
                 builder.UserID = userName;
                 builder.Password = password;
             }
+
             builder.PersistSecurityInfo = false;
 
-            if (this.UseMars)
+            if (UseMars)
             {
                 builder.MultipleActiveResultSets = true;
             }
+
             if (timeout > 0)
             {
                 builder.ConnectTimeout = timeout;
             }
+
             return builder.ConnectionString;
         }
 
         #endregion
-
 
         #region Methods
 
@@ -86,8 +67,7 @@ namespace Nop.Data
             {
                 //raw connection string
                 if (string.IsNullOrEmpty(model.DatabaseConnectionString))
-                    //__ modelState.AddModelError("", _locService.GetResource("ConnectionStringRequired"));
-                    modelState.AddModelError("", "ConnectionStringRequired");
+                    modelState.AddModelError(string.Empty, "ConnectionStringRequired");
 
                 try
                 {
@@ -96,31 +76,26 @@ namespace Nop.Data
                 }
                 catch
                 {
-                    //__ modelState.AddModelError("", _locService.GetResource("ConnectionStringWrongFormat"));
-                    modelState.AddModelError("", "ConnectionStringWrongFormat");
+                    modelState.AddModelError(string.Empty, "ConnectionStringWrongFormat");
                 }
             }
             else
             {
                 //values
                 if (string.IsNullOrEmpty(model.SqlServerName))
-                    //__ modelState.AddModelError("", _locService.GetResource("SqlServerNameRequired"));
-                    modelState.AddModelError("", "SqlServerNameRequired");
+                    modelState.AddModelError(string.Empty, "SqlServerNameRequired");
                 if (string.IsNullOrEmpty(model.SqlDatabaseName))
-                    //__ modelState.AddModelError("", _locService.GetResource("DatabaseNameRequired"));
-                    modelState.AddModelError("", "DatabaseNameRequired");
+                    modelState.AddModelError(string.Empty, "DatabaseNameRequired");
 
                 //authentication type
-                if (model.SqlAuthenticationType.Equals("sqlauthentication", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    //SQL authentication
-                    if (string.IsNullOrEmpty(model.SqlServerUsername))
-                        //__ modelState.AddModelError("", _locService.GetResource("SqlServerUsernameRequired"));
-                        modelState.AddModelError("", "SqlServerUsernameRequired");
-                    if (string.IsNullOrEmpty(model.SqlServerPassword))
-                        //__ modelState.AddModelError("", _locService.GetResource("SqlServerPasswordRequired"));
-                        modelState.AddModelError("", "SqlServerPasswordRequired");
-                }
+                if (!model.SqlAuthenticationType.Equals("sqlauthentication", StringComparison.InvariantCultureIgnoreCase)) 
+                    return;
+
+                //SQL authentication
+                if (string.IsNullOrEmpty(model.SqlServerUsername))
+                    modelState.AddModelError(string.Empty, "SqlServerUsernameRequired");
+                if (string.IsNullOrEmpty(model.SqlServerPassword))
+                    modelState.AddModelError(string.Empty, "SqlServerPasswordRequired");
             }
         }
 
@@ -142,7 +117,7 @@ namespace Nop.Data
                 //parse database name
                 var builder = new SqlConnectionStringBuilder(connectionString);
                 var databaseName = builder.InitialCatalog;
-                //now create connection string to 'master' dabatase. It always exists.
+                //now create connection string to 'master' database. It always exists.
                 builder.InitialCatalog = "master";
                 var masterCatalogConnectionString = builder.ToString();
                 var query = $"CREATE DATABASE [{databaseName}]";
@@ -158,29 +133,28 @@ namespace Nop.Data
                 }
 
                 //try connect
-                if (triesToConnect > 0)
-                {
-                    //Sometimes on slow servers (hosting) there could be situations when database requires some time to be created.
-                    //But we have already started creation of tables and sample data.
-                    //As a result there is an exception thrown and the installation process cannot continue.
-                    //That's why we are in a cycle of "triesToConnect" times trying to connect to a database with a delay of one second.
-                    for (var i = 0; i <= triesToConnect; i++)
-                    {
-                        if (i == triesToConnect)
-                            throw new Exception("Unable to connect to the new database. Please try one more time");
+                if (triesToConnect <= 0) 
+                    return string.Empty;
 
-                        if (!this.DatabaseExists(connectionString))
-                            Thread.Sleep(1000);
-                        else
-                            break;
-                    }
+                //Sometimes on slow servers (hosting) there could be situations when database requires some time to be created.
+                //But we have already started creation of tables and sample data.
+                //As a result there is an exception thrown and the installation process cannot continue.
+                //That's why we are in a cycle of "triesToConnect" times trying to connect to a database with a delay of one second.
+                for (var i = 0; i <= triesToConnect; i++)
+                {
+                    if (i == triesToConnect)
+                        throw new Exception("Unable to connect to the new database. Please try one more time");
+
+                    if (!DatabaseExists(connectionString))
+                        Thread.Sleep(1000);
+                    else
+                        break;
                 }
 
                 return string.Empty;
             }
             catch (Exception ex)
             {
-                //__ return string.Format(_locService.GetResource("DatabaseCreationError"), ex.Message);
                 return string.Format("DatabaseCreationError", ex.Message);
             }
         }
@@ -199,6 +173,7 @@ namespace Nop.Data
                 {
                     conn.Open();
                 }
+
                 return true;
             }
             catch
@@ -213,7 +188,6 @@ namespace Nop.Data
         public string DbProvider()
         {
             return "~/Views/Install/_MsSqlDbProvider.cshtml";
-            //return string.Empty;
         }
 
         /// <summary>
@@ -231,7 +205,8 @@ namespace Nop.Data
         /// <returns>Connection string</returns>
         public string GetConnectionString(IDbPluginInstallModel model)
         {
-            var connectionString = string.Empty;
+            string connectionString;
+
             if (model.SqlConnectionInfo.Equals("sqlconnectioninfo_raw", StringComparison.InvariantCultureIgnoreCase))
             {
                 //raw connection string
@@ -245,8 +220,8 @@ namespace Nop.Data
                     model.SqlServerName, model.SqlServerPort, model.SqlDatabaseName,
                     model.SqlServerUsername, model.SqlServerPassword);
             }
-            return connectionString;
 
+            return connectionString;
         }
 
         #endregion
@@ -255,10 +230,7 @@ namespace Nop.Data
 
         public string DataProviderName => typeof(SqlServerDataProvider).Name;
 
-        protected virtual bool UseMars
-        {
-            get { return false; }
-        }
+        protected virtual bool UseMars => false;
 
         #endregion
     }

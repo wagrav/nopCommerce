@@ -1,27 +1,17 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Nop.Data;
 
-namespace Nop.Plugin.Data.PostgreSQL.Data.Extensions
+namespace Nop.Plugin.Data.PostgreSQL.Data.Extenisions
 {
     /// <summary>
     /// Represents database context extensions
     /// </summary>
     public static class PostgreSQLDbContextExtensions
     {
-        #region Fields
-
-        private static string databaseName;
-        private static readonly ConcurrentDictionary<string, string> tableNames = new ConcurrentDictionary<string, string>();
-        private static readonly ConcurrentDictionary<string, IEnumerable<(string, int?)>> columnsMaxLength = new ConcurrentDictionary<string, IEnumerable<(string, int?)>>();
-        private static readonly ConcurrentDictionary<string, IEnumerable<(string, decimal?)>> decimalColumnsMaxValue = new ConcurrentDictionary<string, IEnumerable<(string, decimal?)>>();
-
-        #endregion
-
         #region Utilities
 
         /// <summary>
@@ -31,17 +21,10 @@ namespace Nop.Plugin.Data.PostgreSQL.Data.Extensions
         /// <returns>List of commands</returns>
         private static IList<string> GetPostgreSqlCommandsFromScript(string sql)
         {
-            var commands = new List<string>();
-
             sql = Regex.Replace(sql, @"\\\r?\n", string.Empty);
             var batches = Regex.Split(sql, @"^----NEXT----", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-            for (var i = 0; i < batches.Length; i++)
-            {
-                commands.Add(batches[i]);
-            }
-
-            return commands;
+            return batches.ToList();
         }
 
         #endregion
@@ -53,7 +36,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Data.Extensions
         /// </summary>
         /// <param name="context">Database context</param>
         /// <param name="tableName">Table name</param>
-        public static void DropPluginTable_(this IDbContext context, string tableName)
+        public static void DropPluginTable(this IDbContext context, string tableName)
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));

@@ -28,14 +28,15 @@ namespace Nop.Plugin.Data.PostgreSQL
         }
 
         #endregion
-
-
+        
         #region Utilities
+
         /// <summary>
         /// Create contents of connection strings used by the NpgsqlConnection class
         /// </summary>
-        /// <param name="trustedConnection">Avalue that indicates whether User ID and Password are specified in the connection (when false) or whether the current Windows account credentials are used for authentication (when true)</param>
+        /// <param name="trustedConnection">A value that indicates whether User ID and Password are specified in the connection (when false) or whether the current Windows account credentials are used for authentication (when true)</param>
         /// <param name="serverName">The name or network address of the instance of PostgreSQL Server to connect to</param>
+        /// <param name="port">The server port</param>
         /// <param name="databaseName">The name of the database associated with the connection</param>
         /// <param name="userName">The user ID to be used when connecting to PosgreSQL Server</param>
         /// <param name="password">The password for the PosgreSQL Server account</param>
@@ -57,18 +58,19 @@ namespace Nop.Plugin.Data.PostgreSQL
                 builder.Username = userName;
                 builder.Password = password;
             }
+
             builder.PersistSecurityInfo = false;
 
             if (timeout > 0)
             {
                 builder.Timeout = timeout;
             }
+
             return builder.ConnectionString;
         }
 
         #endregion
-
-
+        
         #region Methods
 
         /// <summary>
@@ -82,7 +84,7 @@ namespace Nop.Plugin.Data.PostgreSQL
             {
                 //raw connection string
                 if (string.IsNullOrEmpty(model.DatabaseConnectionString))
-                    modelState.AddModelError("", _locService.GetResource("ConnectionStringRequired"));
+                    modelState.AddModelError(string.Empty, _locService.GetResource("ConnectionStringRequired"));
 
                 try
                 {
@@ -91,26 +93,26 @@ namespace Nop.Plugin.Data.PostgreSQL
                 }
                 catch
                 {
-                    modelState.AddModelError("", _locService.GetResource("ConnectionStringWrongFormat"));
+                    modelState.AddModelError(string.Empty, _locService.GetResource("ConnectionStringWrongFormat"));
                 }
             }
             else
             {
                 //values
                 if (string.IsNullOrEmpty(model.SqlServerName))
-                    modelState.AddModelError("", _locService.GetResource("SqlServerNameRequired"));
+                    modelState.AddModelError(string.Empty, _locService.GetResource("SqlServerNameRequired"));
                 if (string.IsNullOrEmpty(model.SqlDatabaseName))
-                    modelState.AddModelError("", _locService.GetResource("DatabaseNameRequired"));
+                    modelState.AddModelError(string.Empty, _locService.GetResource("DatabaseNameRequired"));
 
                 //authentication type
-                if (model.SqlAuthenticationType.Equals("sqlauthentication", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    //SQL authentication
-                    if (string.IsNullOrEmpty(model.SqlServerUsername))
-                        modelState.AddModelError("", _locService.GetResource("SqlServerUsernameRequired"));
-                    if (string.IsNullOrEmpty(model.SqlServerPassword))
-                        modelState.AddModelError("", _locService.GetResource("SqlServerPasswordRequired"));
-                }
+                if (!model.SqlAuthenticationType.Equals("sqlauthentication", StringComparison.InvariantCultureIgnoreCase))
+                    return;
+
+                //SQL authentication
+                if (string.IsNullOrEmpty(model.SqlServerUsername))
+                    modelState.AddModelError(string.Empty, _locService.GetResource("SqlServerUsernameRequired"));
+                if (string.IsNullOrEmpty(model.SqlServerPassword))
+                    modelState.AddModelError(string.Empty, _locService.GetResource("SqlServerPasswordRequired"));
             }
         }
 
@@ -148,23 +150,24 @@ namespace Nop.Plugin.Data.PostgreSQL
                 }
 
                 //try connect
-                if (triesToConnect > 0)
-                {
-                    //Sometimes on slow servers (hosting) there could be situations when database requires some time to be created.
-                    //But we have already started creation of tables and sample data.
-                    //As a result there is an exception thrown and the installation process cannot continue.
-                    //That's why we are in a cycle of "triesToConnect" times trying to connect to a database with a delay of one second.
-                    for (var i = 0; i <= triesToConnect; i++)
-                    {
-                        if (i == triesToConnect)
-                            throw new Exception("Unable to connect to the new database. Please try one more time");
+                if (triesToConnect <= 0) 
+                    return string.Empty;
 
-                        if (!this.DatabaseExists(connectionString))
-                            Thread.Sleep(1000);
-                        else
-                            break;
-                    }
+                //Sometimes on slow servers (hosting) there could be situations when database requires some time to be created.
+                //But we have already started creation of tables and sample data.
+                //As a result there is an exception thrown and the installation process cannot continue.
+                //That's why we are in a cycle of "triesToConnect" times trying to connect to a database with a delay of one second.
+                for (var i = 0; i <= triesToConnect; i++)
+                {
+                    if (i == triesToConnect)
+                        throw new Exception("Unable to connect to the new database. Please try one more time");
+
+                    if (!DatabaseExists(connectionString))
+                        Thread.Sleep(1000);
+                    else
+                        break;
                 }
+
                 return string.Empty;
             }
             catch (Exception ex)
@@ -187,6 +190,7 @@ namespace Nop.Plugin.Data.PostgreSQL
                 {
                     conn.Open();
                 }
+
                 return true;
             }
             catch
@@ -227,7 +231,8 @@ namespace Nop.Plugin.Data.PostgreSQL
         /// <returns>Connection string</returns>
         public string GetConnectionString(IDbPluginInstallModel model)
         {
-            var connectionString = string.Empty;
+            string connectionString;
+
             if (model.SqlConnectionInfo.Equals("sqlconnectioninfo_raw", StringComparison.InvariantCultureIgnoreCase))
             {
                 //raw connection string
@@ -241,24 +246,8 @@ namespace Nop.Plugin.Data.PostgreSQL
                     model.SqlServerName, model.SqlServerPort, model.SqlDatabaseName,
                     model.SqlServerUsername, model.SqlServerPassword);
             }
+
             return connectionString;
-
-        }
-
-        /// <summary>
-        /// Install plugin
-        /// </summary>
-        public override void Install()
-        {
-            base.Install();
-        }
-
-        /// <summary>
-        /// Uninstall plugin
-        /// </summary>
-        public override void Uninstall()
-        {
-            base.Uninstall();
         }
 
         #endregion

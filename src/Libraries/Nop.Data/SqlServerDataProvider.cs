@@ -70,6 +70,9 @@ namespace Nop.Data
         /// </summary>
         public virtual int SupportedLengthOfBinaryHash => 8000; //for SQL Server 2008 and above HASHBYTES function has a limit of 8000 characters.
 
+        /// <summary>
+        /// Gets a data provider name
+        /// </summary>
         public string DataProviderName => "SqlServer";
 
         #endregion

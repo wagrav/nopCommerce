@@ -6,12 +6,12 @@ using Nop.Core.Data;
 namespace Nop.Data
 {
     /// <summary>
-    /// MySQL db context options helper to use MySQL for db context.
+    /// MsSQL db context options helper to use Ms Sql Server for db context.
     /// </summary>
     public class SqlServerDbContextOptionsBuilderHelper : IDbContextOptionsBuilderHelper
     {
         /// <summary>
-        /// Configure db context options to use PostgreSQL.
+        /// Configure db context options to use Ms Sql.
         /// </summary>
         /// <param name="optionsBuilder">DbContextOptionsBuilder</param>
         /// <param name="services">IServiceCollection</param>
@@ -22,7 +22,7 @@ namespace Nop.Data
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            //register copitns for Ms SqlServer
+            //register copitns for Ms Sql Server
             var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
 
             if (nopConfig.UseRowNumberForPaging)

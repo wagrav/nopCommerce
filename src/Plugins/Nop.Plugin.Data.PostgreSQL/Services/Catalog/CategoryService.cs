@@ -107,7 +107,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
 
                 //var storeIdParameter = _dataProvider.GetInt32Parameter("StoreId", !_catalogSettings.IgnoreStoreLimitations ? storeId : 0);
                 var storeIdParameter = new Npgsql.NpgsqlParameter("storeid", NpgsqlTypes.NpgsqlDbType.Integer)
-                    { Value = !_catalogSettings.IgnoreStoreLimitations ? storeId : 0};
+                    { Value = !_catalogSettings.IgnoreStoreLimitations ? storeId : 0 };
 
                 //var pageIndexParameter = _dataProvider.GetInt32Parameter("PageIndex", pageIndex);
                 var pageIndexParameter = new Npgsql.NpgsqlParameter("pageindex", NpgsqlTypes.NpgsqlDbType.Integer)
@@ -118,9 +118,9 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 { Value = pageSize };
 
                 //pass allowed customer role identifiers as comma-delimited string
-                var customerRoleIds = !_catalogSettings.IgnoreAcl ? string.Join(",", _workContext.CurrentCustomer.GetCustomerRoleIds()) :  string.Empty ;
+                var customerRoleIds = !_catalogSettings.IgnoreAcl ? string.Join(",", _workContext.CurrentCustomer.GetCustomerRoleIds()) : string.Empty;
                 var customerRoleIdsParameter = new Npgsql.NpgsqlParameter("customerroleids", NpgsqlTypes.NpgsqlDbType.Text)
-                { Value = customerRoleIds};
+                { Value = customerRoleIds };
 
                 //invoke categoryloadallpaged stored procedure
                 var categories = _dbContext.EntityFromSql<Category>("categoryloadallpaged",
@@ -135,8 +135,6 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 //paging
                 return new PagedList<Category>(categories, pageIndex, pageSize, totalRecords);
             }
-
-
 
             //don't use a stored procedure. Use LINQ
             var query = _categoryRepository.Table;
@@ -178,11 +176,11 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             var unsortedCategories = query.ToList();
 
             //sort categories
-            var sortedCategories = this.SortCategoriesForTree(unsortedCategories);
+            var sortedCategories = SortCategoriesForTree(unsortedCategories);
 
             //paging
             return new PagedList<Category>(sortedCategories, pageIndex, pageSize);
-        }//****
+        }
 
         #endregion
     }
