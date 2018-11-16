@@ -199,7 +199,7 @@ namespace Nop.Web.Controllers
                 AdminEmail = "admin@yourStore.com",
                 InstallSampleData = false,
                 DatabaseConnectionString = string.Empty,
-                DataProvider = typeof(SqlServerDataProvider).Name,
+                DataProvider = "SqlServer",
                 //fast installation service does not support SQL compact
                 DisableSampleDataOption = _config.DisableSampleDataDuringInstallation,
                 SqlAuthenticationType = "sqlauthentication",
@@ -342,7 +342,7 @@ namespace Nop.Web.Controllers
 
                         plugin.Install();
                     }
-                    
+
                     //register default permissions
                     //var permissionProviders = EngineContext.Current.Resolve<ITypeFinder>().FindClassesOfType<IPermissionProvider>();
                     var permissionProviders = new List<Type> { typeof(StandardPermissionProvider) };

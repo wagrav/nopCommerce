@@ -254,7 +254,7 @@ namespace Nop.Plugin.Data.PostgreSQL
 
         #region Properties
 
-        public string DataProviderName => typeof(PostgreSQLDataProvider).Name;
+        public string DataProviderName => PostgreSQLDataProvider._dataProviderName;
 
         #endregion
     }

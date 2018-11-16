@@ -228,7 +228,7 @@ namespace Nop.Data
 
         #region Properties
 
-        public string DataProviderName => typeof(SqlServerDataProvider).Name;
+        public string DataProviderName => SqlServerDataProvider._dataProviderName;
 
         protected virtual bool UseMars => false;
 

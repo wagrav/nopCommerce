@@ -8,7 +8,7 @@
 
 <div class="radio provider_sqlserver" >
     <label>
-        <input asp-for="DataProvider" value="SqlServerDataProvider" type="radio" id="provider_sqlserver" />
+        <input asp-for="DataProvider" value="SqlServer" type="radio" id="provider_sqlserver" />
         @ILS.GetResource("SqlStandard")  @if (Model.DbPlugins.Count > 1) {<strong>@ILS.GetResource("Recommended")</strong>}
     </label>
 </div>

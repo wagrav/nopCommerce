@@ -17,6 +17,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
     /// </summary>
     public class PostgreSQLDataProvider : IDataProvider
     {
+        #region Fields
+
+        internal static string _dataProviderName = "PostgreSQL";
+
+        #endregion
+
         #region Methods
 
         /// <summary>
@@ -74,7 +80,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <summary>
         /// Gets a data provider name
         /// </summary>
-        public string DataProviderName => "PostgreSQL";
+        public string DataProviderName => _dataProviderName;
 
         #endregion
     }

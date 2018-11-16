@@ -15,6 +15,12 @@ namespace Nop.Data
     /// </summary>
     public partial class SqlServerDataProvider : IDataProvider
     {
+        #region Fields
+
+        internal static string _dataProviderName => "SqlServer";
+
+        #endregion
+
         #region Methods
 
         /// <summary>
@@ -73,7 +79,7 @@ namespace Nop.Data
         /// <summary>
         /// Gets a data provider name
         /// </summary>
-        public string DataProviderName => "SqlServer";
+        public string DataProviderName =>  _dataProviderName;
 
         #endregion
     }
