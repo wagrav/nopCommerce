@@ -220,3 +220,80 @@ BEGIN
 END
 
 $BODY$;
+----NEXT----
+CREATE OR REPLACE FUNCTION public.deleteguests(
+    createdfromutc timestamp without time zone,
+    createdtoutc timestamp without time zone,
+    onlywithoutshoppingcart boolean DEFAULT true)
+    RETURNS TABLE("Value" integer) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+
+DECLARE rowcount INT;
+BEGIN
+    DROP TABLE IF EXISTS tmp_guests;
+    CREATE TEMP TABLE  tmp_guests
+    (
+        CustomerId INT NOT NULL
+    );
+    
+    INSERT INTO tmp_guests (CustomerId)
+    SELECT "Id" FROM "Customer" c
+    WHERE
+    --created from
+    ((createdfromutc is null) OR (c."CreatedOnUtc" > createdfromutc))
+    AND
+    --created to
+    ((createdtoutc is null) OR (c."CreatedOnUtc" < createdtoutc))
+    AND
+    --shopping cart items
+    ((onlywithoutshoppingcart = FALSE) OR (NOT EXISTS(SELECT 1 FROM "ShoppingCartItem" sci  inner join "Customer"  on sci."CustomerId"=c."Id")))
+    AND
+    --guests only
+    (EXISTS(SELECT 1 FROM "Customer_CustomerRole_Mapping" ccrm inner join "Customer" on ccrm."Customer_Id"=c."Id" inner join "CustomerRole" cr on cr."Id"=ccrm."CustomerRole_Id" WHERE cr."SystemName" = N'Guests'))
+    AND
+    --no orders
+    (NOT EXISTS(SELECT 1 FROM "Order" o inner join "Customer" on o."CustomerId"=c."Id"))
+    AND
+    --no blog comments
+    (NOT EXISTS(SELECT 1 FROM "BlogComment" bc inner join "Customer" on bc."CustomerId"=c."Id"))
+    AND
+    --no news comments
+    (NOT EXISTS(SELECT 1 FROM "NewsComment" nc inner join "Customer" on nc."CustomerId"=c."Id"))
+    AND
+    --no product reviews
+    (NOT EXISTS(SELECT 1 FROM "ProductReview" pr inner join "Customer" on pr."CustomerId"=c."Id"))
+    AND
+    --no product reviews helpfulness
+    (NOT EXISTS(SELECT 1 FROM "ProductReviewHelpfulness" prh inner join "Customer" on prh."CustomerId"=c."Id"))
+    AND
+    --no poll voting
+    (NOT EXISTS(SELECT 1 FROM "PollVotingRecord" pvr inner join "Customer" on pvr."CustomerId"=c."Id"))
+    AND
+    --no forum topics 
+    (NOT EXISTS(SELECT 1 FROM "Forums_Topic" ft inner join "Customer" on ft."CustomerId"=c."Id"))
+    AND
+    --no forum posts 
+    (NOT EXISTS(SELECT 1 FROM "Forums_Post" fp inner join "Customer" on fp."CustomerId"=c."Id"))
+    AND
+    --no system accounts
+    (c."IsSystemAccount" = FALSE);
+
+    DELETE FROM "Customer"
+    WHERE "Id" IN (SELECT CustomerId FROM tmp_guests);
+
+    --delete attributes
+    DELETE FROM "GenericAttribute"
+    WHERE ("EntityId" IN (SELECT CustomerId FROM tmp_guests))
+    AND
+    ("KeyGroup" = N'Customer');
+
+        rowcount := (SELECT COUNT(*) FROM tmp_guests);
+    RETURN QUERY SELECT rowcount ;
+END
+
+$BODY$;

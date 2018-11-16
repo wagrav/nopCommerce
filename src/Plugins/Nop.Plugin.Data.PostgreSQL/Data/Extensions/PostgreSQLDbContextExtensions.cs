@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Nop.Data;
 
-namespace Nop.Plugin.Data.PostgreSQL.Data.Extenisions
+namespace Nop.Plugin.Data.PostgreSQL.Data.Extensions
 {
     /// <summary>
     /// Represents database context extensions
@@ -45,7 +45,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Data.Extenisions
                 throw new ArgumentNullException(nameof(tableName));
 
             //drop the table
-            var dbScript = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE [{tableName}]";
+            var dbScript = $"DROP TABLE IF EXISTS \"{tableName}\";";
             context.ExecuteSqlCommand(dbScript);
             context.SaveChanges();
         }

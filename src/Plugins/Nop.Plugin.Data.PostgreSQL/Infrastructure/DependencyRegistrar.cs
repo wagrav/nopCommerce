@@ -4,6 +4,7 @@ using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
+using Nop.Services.Customers;
 
 namespace Nop.Plugin.Data.PostgreSQL.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Infrastructure
             builder.RegisterType<Services.Catalog.ProductTagService>().As<IProductTagService>().InstancePerLifetimeScope();
             builder.RegisterType<Services.Common.FulltextService>().As<IFulltextService>().InstancePerLifetimeScope();
             builder.RegisterType<Services.Catalog.CategoryService>().As<ICategoryService>().InstancePerLifetimeScope();
+            builder.RegisterType<Services.Customers.CustomerService>().As<ICustomerService>().InstancePerLifetimeScope();
         }
 
         /// <summary>

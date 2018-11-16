@@ -8,7 +8,7 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Extensions;
-using Nop.Plugin.Data.PostgreSQL.Data.Extenisions;
+using Nop.Plugin.Data.PostgreSQL.Data.Extensions;
 
 namespace Nop.Plugin.Data.PostgreSQL.Data
 {
