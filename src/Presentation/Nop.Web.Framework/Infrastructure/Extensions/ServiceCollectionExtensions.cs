@@ -21,6 +21,7 @@ using Nop.Core.Plugins;
 using Nop.Data;
 using Nop.Services.Authentication;
 using Nop.Services.Authentication.External;
+using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Security;
 using Nop.Services.Tasks;
@@ -57,15 +58,31 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             engine.Initialize(services);
             var serviceProvider = engine.ConfigureServices(services, configuration);
 
-            if (DataSettingsManager.DatabaseIsInstalled)
-            {
-                //implement schedule tasks
-                //database is already installed, so start scheduled tasks
-                TaskManager.Instance.Initialize();
-                TaskManager.Instance.Start();
+            if (!DataSettingsManager.DatabaseIsInstalled) 
+                return serviceProvider;
 
-                //log application start
-                EngineContext.Current.Resolve<ILogger>().Information("Application started", null, null);
+            //implement schedule tasks
+            //database is already installed, so start scheduled tasks
+            TaskManager.Instance.Initialize();
+            TaskManager.Instance.Start();
+
+            //log application start
+            EngineContext.Current.Resolve<ILogger>().Information("Application started");
+
+            //install plugins
+            var customerActivityService = engine.Resolve<ICustomerActivityService>();
+            var localizationService = engine.Resolve<ILocalizationService>();
+            var logger = engine.Resolve<ILogger>();
+            foreach (var installedPluginSystemName in PluginManager.InstallPluginsIfNeed())
+            {
+                customerActivityService.InsertActivity("InstallNewPlugin", string.Format(localizationService.GetResource("ActivityLog.InstallNewPlugin"), installedPluginSystemName));
+            }
+
+            //log plugin installation errors
+            foreach (var descriptor in PluginManager.ReferencedPlugins.Where(pluginDescriptor=>pluginDescriptor.Error != null))
+            {
+                logger.Error(string.Format(localizationService.GetResource("ActivityLog.NotInstalledNewPluginError"), descriptor.SystemName), descriptor.Error);
+                descriptor.Error = null;
             }
 
             return serviceProvider;
@@ -321,7 +338,7 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             services.AddMiniProfiler(miniProfilerOptions =>
             {
                 //use memory cache provider for storing each result
-                (miniProfilerOptions.Storage as MemoryCacheStorage).CacheDuration = TimeSpan.FromMinutes(60);
+                ((MemoryCacheStorage)miniProfilerOptions.Storage).CacheDuration = TimeSpan.FromMinutes(60);
 
                 //whether MiniProfiler should be displayed
                 miniProfilerOptions.ShouldProfile = request =>

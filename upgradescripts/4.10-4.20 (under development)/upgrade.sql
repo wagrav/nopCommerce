@@ -239,6 +239,36 @@ set @resources='
   <LocaleResource Name="Admin.Configuration.Settings.ShoppingCart.GroupTierPricesForDistinctShoppingCartItems.Hint">
     <Value>Allows to offer special prices when customers buy bigger amounts of a particular product. For example, when a customer could have two shopping cart items for the same products (different product attributes).</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.ApplayChanges">
+    <Value>Restart application to apply changes</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.DiscardChanges">
+    <Value>Discard changes</Value>
+  </LocaleResource>  
+  <LocaleResource Name="Admin.Configuration.Plugins.ApplayChanges.Progress">
+    <Value>Applying changes on plugins...</Value>
+  </LocaleResource>    
+  <LocaleResource Name="Admin.Configuration.Plugins.DiscardChanges.Progress">
+    <Value>Discarding changes on plugins...</Value>
+  </LocaleResource>    
+  <LocaleResource Name="Admin.Configuration.Plugins.ChangesApplyAfterReboot">
+    <Value>Changes will be apply after restart application</Value>
+  </LocaleResource> 
+  <LocaleResource Name="ActivityLog.NotUninstalledPluginError">
+    <Value>The plugin "{0}" not uninstalled</Value>
+  </LocaleResource> 
+  <LocaleResource Name="ActivityLog.NotInstalledNewPluginError">
+    <Value>The plugin "{0}" not installed</Value>
+  </LocaleResource>   
+  <LocaleResource Name="ActivityLog.NotDeletedPluginError">
+    <Value>The plugin "{0}" not deleted</Value>
+  </LocaleResource> 
+  <LocaleResource Name="Admin.System.Warnings.PluginrRquiredAssembly">
+    <Value>the ''{0}'' plugin required the ''{1}'' assembly</Value>
+  </LocaleResource>  
+  <LocaleResource Name="Admin.System.Warnings.AssemblyHasCollision">
+    <Value>The ''{0}'' assembly has collision, application loaded the ''{1}'' assembly, but {2}</Value>
+  </LocaleResource>   
 </Language>
 '
 

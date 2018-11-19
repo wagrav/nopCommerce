@@ -38,6 +38,7 @@ namespace Nop.Web.Areas.Admin.Controllers
         private readonly IEventPublisher _eventPublisher;
         private readonly IExternalAuthenticationService _externalAuthenticationService;
         private readonly ILocalizationService _localizationService;
+        private readonly ILogger _logger;
         private readonly INotificationService _notificationService;
         private readonly IPaymentService _paymentService;
         private readonly IPermissionService _permissionService;
@@ -62,6 +63,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             IEventPublisher eventPublisher,
             IExternalAuthenticationService externalAuthenticationService,
             ILocalizationService localizationService,
+            ILogger logger,
             INotificationService notificationService,
             IPaymentService paymentService,
             IPermissionService permissionService,
@@ -82,6 +84,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             this._eventPublisher = eventPublisher;
             this._externalAuthenticationService = externalAuthenticationService;
             this._localizationService = localizationService;
+            this._logger = logger;
             this._notificationService = notificationService;
             this._paymentService = paymentService;
             this._permissionService = permissionService;
@@ -96,6 +99,47 @@ namespace Nop.Web.Areas.Admin.Controllers
             this._shippingSettings = shippingSettings;
             this._taxSettings = taxSettings;
             this._widgetSettings = widgetSettings;
+        }
+
+        #endregion
+
+        #region Utilities
+
+        protected virtual IActionResult UninstallAndDeletePluginsIfNeed()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePlugins))
+                return AccessDeniedView();
+
+            //uninstall plugins
+            foreach (var uninstalledPluginSystemName in PluginManager.UninstallPluginsIfNeed())
+            {
+                _customerActivityService.InsertActivity("UninstallPlugin", string.Format(_localizationService.GetResource("ActivityLog.UninstallPlugin"), uninstalledPluginSystemName));
+            }
+
+            //log plugin uninstallation errors
+            foreach (var descriptor in PluginManager.ReferencedPlugins.Where(pluginDescriptor=>pluginDescriptor.Error != null))
+            {
+                _logger.Error(string.Format(_localizationService.GetResource("ActivityLog.NotUninstalledPluginError"), descriptor.SystemName), descriptor.Error);
+                descriptor.Error = null;
+            }
+
+            //uninstall plugins
+            foreach (var deletedPluginSystemName in PluginManager.DeletePluginsIfNeed())
+            {
+                _customerActivityService.InsertActivity("DeletePlugin", string.Format(_localizationService.GetResource("ActivityLog.DeletePlugin"), deletedPluginSystemName));
+            }
+
+            //log plugin deletion errors
+            foreach (var descriptor in PluginManager.ReferencedPlugins.Where(pluginDescriptor=>pluginDescriptor.Error != null))
+            {
+                _logger.Error(string.Format(_localizationService.GetResource("ActivityLog.NotDeletedPluginError"), descriptor.SystemName), descriptor.Error);
+                descriptor.Error = null;
+            }
+
+            //restart application
+            _webHelper.RestartAppDomain();
+
+            return RedirectToAction("List");
         }
 
         #endregion
@@ -229,18 +273,10 @@ namespace Nop.Web.Areas.Admin.Controllers
                 //check whether plugin is not installed
                 if (pluginDescriptor.Installed)
                     return RedirectToAction("List");
-
-                //install plugin
-                pluginDescriptor.Instance().Install();
-
-                //activity log
-                _customerActivityService.InsertActivity("InstallNewPlugin",
-                    string.Format(_localizationService.GetResource("ActivityLog.InstallNewPlugin"), pluginDescriptor.FriendlyName));
-
-                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.Installed"));
-
-                //restart application
-                _webHelper.RestartAppDomain();
+                
+                PluginManager.PluginsInfo.AddToInstall(pluginDescriptor.SystemName);
+                pluginDescriptor.ShowInPluginsList = false;
+                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ChangesApplyAfterReboot"));
             }
             catch (Exception exc)
             {
@@ -273,18 +309,10 @@ namespace Nop.Web.Areas.Admin.Controllers
                 //check whether plugin is installed
                 if (!pluginDescriptor.Installed)
                     return RedirectToAction("List");
-
-                //uninstall plugin
-                pluginDescriptor.Instance().Uninstall();
-
-                //activity log
-                _customerActivityService.InsertActivity("UninstallPlugin",
-                    string.Format(_localizationService.GetResource("ActivityLog.UninstallPlugin"), pluginDescriptor.FriendlyName));
-
-                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.Uninstalled"));
-
-                //restart application
-                _webHelper.RestartAppDomain();
+               
+                PluginManager.PluginsInfo.AddToUnInstall(pluginDescriptor.SystemName);
+                pluginDescriptor.ShowInPluginsList = false;
+                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ChangesApplyAfterReboot"));
             }
             catch (Exception exc)
             {
@@ -310,17 +338,14 @@ namespace Nop.Web.Areas.Admin.Controllers
                         systemName = formValue.Substring("delete-plugin-link-".Length);
 
                 var pluginDescriptor = _pluginFinder.GetPluginDescriptorBySystemName(systemName, LoadPluginsMode.All);
-                if (!PluginManager.DeletePlugin(pluginDescriptor))
+
+                //check whether plugin is not installed
+                if (pluginDescriptor.Installed)
                     return RedirectToAction("List");
-
-                //activity log
-                _customerActivityService.InsertActivity("DeletePlugin",
-                    string.Format(_localizationService.GetResource("ActivityLog.DeletePlugin"), pluginDescriptor.FriendlyName));
-
-                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.Deleted"));
-
-                //restart application
-                _webHelper.RestartAppDomain();
+               
+                PluginManager.PluginsInfo.AddToDelete(pluginDescriptor.SystemName);
+                pluginDescriptor.ShowInPluginsList = false;
+                _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ChangesApplyAfterReboot"));
             }
             catch (Exception exc)
             {
@@ -334,11 +359,24 @@ namespace Nop.Web.Areas.Admin.Controllers
         [FormValueRequired("plugin-reload-grid")]
         public virtual IActionResult ReloadList()
         {
+            return UninstallAndDeletePluginsIfNeed();
+        }
+
+        [HttpPost, ActionName("List")]
+        [FormValueRequired("plugin-applay-changes")]
+        public virtual IActionResult ApplayChanges()
+        {
+            return UninstallAndDeletePluginsIfNeed();
+        }
+
+        [HttpPost, ActionName("List")]
+        [FormValueRequired("plugin-discard-changes")]
+        public virtual IActionResult DiscardChanges()
+        {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManagePlugins))
                 return AccessDeniedView();
-
-            //restart application
-            _webHelper.RestartAppDomain();
+            
+            PluginManager.PluginsInfo.ResetChanges();
 
             return RedirectToAction("List");
         }
@@ -383,7 +421,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                     pluginDescriptor.LimitedToCustomerRoles = model.SelectedCustomerRoleIds;
 
                 //update the description file
-                PluginManager.SavePluginDescriptor(pluginDescriptor);
+                pluginDescriptor.Save();
 
                 //reset plugin cache
                 _pluginFinder.ReloadPlugins(pluginDescriptor);

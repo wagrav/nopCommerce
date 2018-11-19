@@ -153,6 +153,8 @@ namespace Nop.Web.Areas.Admin.Factories
             //prepare page parameters
             searchModel.SetGridPageSize();
 
+            searchModel.NeedToRestart = PluginManager.NeedToRestartForApplayChanges;
+
             return searchModel;
         }
 
@@ -177,13 +179,13 @@ namespace Nop.Web.Areas.Admin.Factories
             //prepare list model
             var model = new PluginListModel
             {
-                Data = plugins.PaginationByRequestModel(searchModel).Select(pluginDescriptor =>
+                Data = plugins.Where(p=>p.ShowInPluginsList).PaginationByRequestModel(searchModel).Select(pluginDescriptor =>
                 {
                     //fill in model values from the entity
                     var pluginModel = pluginDescriptor.ToPluginModel<PluginModel>();
 
                     //fill in additional values (not existing in the entity)
-                    pluginModel.LogoUrl = PluginManager.GetLogoUrl(pluginDescriptor);
+                    pluginModel.LogoUrl = pluginDescriptor.GetLogoUrl();
                     if (pluginDescriptor.Installed)
                         PrepareInstalledPluginModel(pluginModel, pluginDescriptor.Instance());
 
@@ -211,7 +213,7 @@ namespace Nop.Web.Areas.Admin.Factories
                 //fill in model values from the entity
                 model = model ?? pluginDescriptor.ToPluginModel(model);
 
-                model.LogoUrl = PluginManager.GetLogoUrl(pluginDescriptor);
+                model.LogoUrl = pluginDescriptor.GetLogoUrl();
                 model.SelectedStoreIds = pluginDescriptor.LimitedToStores;
                 model.SelectedCustomerRoleIds = pluginDescriptor.LimitedToCustomerRoles;
                 if (pluginDescriptor.Installed)
