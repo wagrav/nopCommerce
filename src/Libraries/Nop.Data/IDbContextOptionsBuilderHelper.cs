@@ -18,5 +18,13 @@ namespace Nop.Data
         /// <param name="nopConfig">NopConfig</param>
         /// <param name="dataSettings">DataSettings</param>
         void Configure(DbContextOptionsBuilder optionsBuilder, IServiceCollection services, NopConfig nopConfig, DataSettings dataSettings);
+
+        /// <summary>
+        /// Configure db context options.
+        /// </summary>
+        /// <param name="optionsBuilder">DbContextOptionsBuilder</param>
+        /// <param name="nopConfig">NopConfig</param>
+        /// <param name="dataSettings">DataSettings</param>
+        void SetDbContextOptions(DbContextOptionsBuilder optionsBuilder, NopConfig nopConfig, DataSettings dataSettings);
     }
 }

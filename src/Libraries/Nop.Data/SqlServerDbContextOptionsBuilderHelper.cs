@@ -19,6 +19,17 @@ namespace Nop.Data
         /// <param name="dataSettings">DataSettings</param>
         public void Configure(DbContextOptionsBuilder optionsBuilder, IServiceCollection services, NopConfig nopConfig, DataSettings dataSettings)
         {
+            SetDbContextOptions(optionsBuilder, nopConfig, dataSettings);
+        }
+
+        /// <summary>
+        /// Configure db context options to use Ms Sql.
+        /// </summary>
+        /// <param name="optionsBuilder">DbContextOptionsBuilder</param>
+        /// <param name="nopConfig">NopConfig</param>
+        /// <param name="dataSettings">DataSettings</param>
+        public void SetDbContextOptions(DbContextOptionsBuilder optionsBuilder, NopConfig nopConfig, DataSettings dataSettings)
+        {
             if (!dataSettings?.IsValid ?? true)
                 return;
 
@@ -29,6 +40,7 @@ namespace Nop.Data
                 dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
             else
                 dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
+
         }
     }
 }

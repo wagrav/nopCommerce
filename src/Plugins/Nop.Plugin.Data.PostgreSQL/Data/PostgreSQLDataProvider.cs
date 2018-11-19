@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Nop.Core.Data;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;

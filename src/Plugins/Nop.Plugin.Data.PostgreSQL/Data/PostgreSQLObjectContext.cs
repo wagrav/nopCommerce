@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -26,6 +27,21 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
 
             sql = $"SELECT * FROM {sql} ({paramstring ?? string.Empty})";
             return sql;
+        }
+
+        /// <summary>
+        /// Drop a table
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        public override void DropTable(string tableName)
+        {
+            if (string.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException(nameof(tableName));
+
+            //drop the table
+            var dbScript = $"DROP TABLE IF EXISTS \"{tableName}\";";
+            ExecuteSqlCommand(dbScript);
+            SaveChanges();
         }
     }
 }

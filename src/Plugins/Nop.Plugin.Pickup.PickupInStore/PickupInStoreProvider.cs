@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Nop.Core;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Shipping;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Plugin.Pickup.PickupInStore.Data;
 using Nop.Plugin.Pickup.PickupInStore.Domain;
 using Nop.Plugin.Pickup.PickupInStore.Services;
@@ -21,11 +25,11 @@ namespace Nop.Plugin.Pickup.PickupInStore
 
         private readonly IAddressService _addressService;
         private readonly ICountryService _countryService;
+        private readonly IDbContext _dbContext;
         private readonly ILocalizationService _localizationService;
         private readonly IStateProvinceService _stateProvinceService;
         private readonly IStoreContext _storeContext;
         private readonly IStorePickupPointService _storePickupPointService;
-        private readonly StorePickupPointObjectContext _objectContext;
         private readonly IWebHelper _webHelper;
 
         #endregion
@@ -34,20 +38,20 @@ namespace Nop.Plugin.Pickup.PickupInStore
 
         public PickupInStoreProvider(IAddressService addressService,
             ICountryService countryService,
+            IDbContext dbContext,
             ILocalizationService localizationService,
             IStateProvinceService stateProvinceService,
             IStoreContext storeContext,
             IStorePickupPointService storePickupPointService,
-            StorePickupPointObjectContext objectContext,
             IWebHelper webHelper)
         {
             this._addressService = addressService;
             this._countryService = countryService;
+            this._dbContext = dbContext;
             this._localizationService = localizationService;
             this._stateProvinceService = stateProvinceService;
             this._storeContext = storeContext;
             this._storePickupPointService = storePickupPointService;
-            this._objectContext = objectContext;
             this._webHelper = webHelper;
         }
 
@@ -97,7 +101,7 @@ namespace Nop.Plugin.Pickup.PickupInStore
                     PickupFee = point.PickupFee,
                     DisplayOrder = point.DisplayOrder,
                     ProviderSystemName = PluginDescriptor.SystemName
-                });                
+                });
             }
 
             if (!result.PickupPoints.Any())
@@ -120,7 +124,18 @@ namespace Nop.Plugin.Pickup.PickupInStore
         public override void Install()
         {
             //database objects
-            _objectContext.Install();
+
+            var finder = new WebAppTypeFinder();
+            var assemb = new List<Assembly>() { _dbContext.GetType().Assembly };
+
+            var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
+            var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
+
+            var _objectContext = new StorePickupPointObjectContext(builder);
+            var str = _objectContext.GenerateCreateScript();
+            _dbContext.ExecuteSqlCommand(str);
+
+            _dbContext.SaveChanges();
 
             //sample pickup point
             var country = _countryService.GetCountryByThreeLetterIsoCode("USA");
@@ -171,7 +186,7 @@ namespace Nop.Plugin.Pickup.PickupInStore
         public override void Uninstall()
         {
             //database objects
-            _objectContext.Uninstall();
+            _dbContext.DropTable(nameof(StorePickupPoint));
 
             //locales
             _localizationService.DeletePluginLocaleResource("Plugins.Pickup.PickupInStore.AddNew");

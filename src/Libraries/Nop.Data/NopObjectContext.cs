@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core;
+using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data.Mapping;
 
 namespace Nop.Data
@@ -41,7 +42,16 @@ namespace Nop.Data
                 var configuration = (IMappingConfiguration)Activator.CreateInstance(typeConfiguration);
                 configuration.ApplyConfiguration(modelBuilder);
             }
-            
+
+            var typeFinder = new Core.Infrastructure.WebAppTypeFinder();
+            var dbModels = typeFinder.FindClassesOfType<IDbModelRegistrar>();
+
+            foreach (var dbModel in dbModels)
+            {
+                var configuration = (IDbModelRegistrar)Activator.CreateInstance(dbModel);
+                configuration.ModelCreating(modelBuilder);
+            }
+
             base.OnModelCreating(modelBuilder);
         }
 
@@ -164,6 +174,21 @@ namespace Nop.Data
             
             //set the entity is not being tracked by the context
             entityEntry.State = EntityState.Detached;
+        }
+
+        /// <summary>
+        /// Drop  table
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        public virtual void DropTable(string tableName)
+        {
+            if (string.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException(nameof(tableName));
+
+            //drop the table
+            var dbScript = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE [{tableName}]";
+            ExecuteSqlCommand(dbScript);
+            SaveChanges();
         }
 
         #endregion

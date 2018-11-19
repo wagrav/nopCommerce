@@ -64,6 +64,12 @@ namespace Nop.Data
         /// <param name="entity">Entity</param>
         void Detach<TEntity>(TEntity entity) where TEntity : BaseEntity;
 
+        /// <summary>
+        /// Drop table
+        /// </summary>
+        /// <param name="tableName"> table name</param>
+        void DropTable(string tableName);
+
         #endregion
     }
 }

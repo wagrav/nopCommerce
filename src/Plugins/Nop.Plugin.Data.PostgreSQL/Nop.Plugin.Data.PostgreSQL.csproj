@@ -6,6 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Components\**" />
+    <Compile Remove="Controllers\**" />
+    <EmbeddedResource Remove="Components\**" />
+    <EmbeddedResource Remove="Controllers\**" />
+    <None Remove="Components\**" />
+    <None Remove="Controllers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="plugin.json" />
     <None Remove="Views\_ViewImports.cshtml" />
     <None Remove="Views\_DbConnectionInfo.cshtml" />
@@ -61,8 +70,6 @@
   </Target>
 
   <ItemGroup>
-    <Folder Include="Components\" />
-    <Folder Include="Controllers\" />
     <Folder Include="Install\" />
     <Folder Include="Models\" />
     <Folder Include="Services\" />
