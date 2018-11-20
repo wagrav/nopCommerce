@@ -221,6 +221,9 @@ set @resources='
   <LocaleResource Name="ShoppingCart.Discount.CannotBeUsed">
     <Value>You cannot use this discount coupon because the validation conditions are not met</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.ProviderIsUsed">
+    <Value>This provider is currently used.</Value>
+  </LocaleResource>
 </Language>
 '
 

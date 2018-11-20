@@ -70,7 +70,7 @@ namespace Nop.Plugin.Data.PostgreSQL
         }
 
         #endregion
-        
+
         #region Methods
 
         /// <summary>
@@ -216,15 +216,6 @@ namespace Nop.Plugin.Data.PostgreSQL
         }
 
         /// <summary>
-        /// Gets a configuration page URL
-        /// </summary>
-        public override string GetConfigurationPageUrl()
-        {
-            return string.Empty;
-            //return _webHelper.GetStoreLocation() + "Admin/WidgetsNivoSlider/Configure";
-        }
-
-        /// <summary>
         /// Create connection strings
         /// </summary>
         /// <param name="model">Installation model</param>
@@ -254,6 +245,9 @@ namespace Nop.Plugin.Data.PostgreSQL
 
         #region Properties
 
+        /// <summary>
+        /// Returns provider name
+        /// </summary>
         public string DataProviderName => PostgreSQLDataProvider._dataProviderName;
 
         #endregion

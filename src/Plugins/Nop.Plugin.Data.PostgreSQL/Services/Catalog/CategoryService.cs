@@ -73,6 +73,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             this._categoryRepository = categoryRepository;
             this._storeMappingRepository = storeMappingRepository;
             this._workContext = workContext;
+            this._entityName = typeof(Category).Name;
         }
 
         #endregion

@@ -228,8 +228,14 @@ namespace Nop.Data
 
         #region Properties
 
+        /// <summary>
+        /// Reutuns provider name
+        /// </summary>
         public string DataProviderName => SqlServerDataProvider._dataProviderName;
 
+        /// <summary>
+        /// Use Mars
+        /// </summary>
         protected virtual bool UseMars => false;
 
         #endregion

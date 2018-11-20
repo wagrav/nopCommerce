@@ -3,11 +3,13 @@ using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Core.Data;
 using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Payments;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Tax;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
 using Nop.Services.Authentication.External;
 using Nop.Services.Cms;
@@ -273,6 +275,14 @@ namespace Nop.Web.Areas.Admin.Controllers
                 //check whether plugin is installed
                 if (!pluginDescriptor.Installed)
                     return RedirectToAction("List");
+
+                var cureentDbProviderAssembly = EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly;
+
+                if (cureentDbProviderAssembly == pluginDescriptor.ReferencedAssembly)
+                {
+                    _notificationService.ErrorNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ProviderIsUsed")); 
+                    return RedirectToAction("List");
+                }
 
                 //uninstall plugin
                 pluginDescriptor.Instance().Uninstall();
