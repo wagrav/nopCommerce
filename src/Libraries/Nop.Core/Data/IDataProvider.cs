@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Collections.Generic;
+using System.Data.Common;
 
 namespace Nop.Core.Data
 {
@@ -19,6 +20,13 @@ namespace Nop.Core.Data
         /// </summary>
         /// <returns>Parameter</returns>
         DbParameter GetParameter();
+
+        /// <summary>
+        /// Get SQL commands from the script
+        /// </summary>
+        /// <param name="sql">SQL script</param>
+        /// <returns>List of commands</returns>
+        IList<string> GetCommandsFromScript(string sql);
 
         #endregion
 

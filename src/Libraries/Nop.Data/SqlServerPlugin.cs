@@ -234,7 +234,7 @@ namespace Nop.Data
         public string DataProviderName => SqlServerDataProvider._dataProviderName;
 
         /// <summary>
-        /// Use Mars
+        /// A value indicating whether we use MARS (Multiple Active Result Sets)
         /// </summary>
         protected virtual bool UseMars => false;
 

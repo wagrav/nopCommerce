@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Nop.Core;
+using Nop.Core.Data;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Infrastructure;
@@ -123,19 +124,22 @@ namespace Nop.Plugin.Pickup.PickupInStore
         /// </summary>
         public override void Install()
         {
-            //database objects
 
-            var finder = new WebAppTypeFinder();
-            var assemb = new List<Assembly>() { _dbContext.GetType().Assembly };
+            if (!_dbContext.TableExists(nameof(StorePickupPoint)))
+            {
+                var finder = new WebAppTypeFinder();
+                var assemb = new List<Assembly>() { EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly };
 
-            var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
-            var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
+                var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
+                var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
 
-            var _objectContext = new StorePickupPointObjectContext(builder);
-            var str = _objectContext.GenerateCreateScript();
-            _dbContext.ExecuteSqlCommand(str);
+                var _objectContext = new StorePickupPointObjectContext(builder);
+                var str = _objectContext.GenerateCreateScript();
+                _dbContext.ExecuteSqlScript(str);
 
-            _dbContext.SaveChanges();
+                _dbContext.SaveChanges();
+            }
+
 
             //sample pickup point
             var country = _countryService.GetCountryByThreeLetterIsoCode("USA");

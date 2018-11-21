@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
@@ -189,6 +190,52 @@ namespace Nop.Data
             var dbScript = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE [{tableName}]";
             ExecuteSqlCommand(dbScript);
             SaveChanges();
+        }
+
+        /// <summary>
+        /// Checks if the specified table in database exists, returns true if table exists
+        /// </summary>
+        ////// <param name="tableName"> Table name</param>
+        /// <returns>Returns true if the table exists.</returns>
+        public virtual bool TableExists(string tableName)
+        {
+            try
+            {
+                var dbScript = $"SELECT 1 FROM \"{tableName}\"";
+                ExecuteSqlCommand(dbScript);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Execute commands from the SQL script against the context database
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="sql">SQL script</param>
+        public void ExecuteSqlScript(string sql)
+        {
+            var bdProvider = Core.Infrastructure.EngineContext.Current.Resolve<Core.Data.IDataProvider>();
+            var sqlCommands = bdProvider.GetCommandsFromScript(sql);
+            foreach (var command in sqlCommands)
+                ExecuteSqlCommand(command);
+        }
+
+        /// <summary>
+        /// Execute commands from a file with SQL script against the context database
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="filePath">Path to the file</param>
+        public void ExecuteSqlScriptFromFile(string filePath)
+        {
+
+            if (!File.Exists(filePath))
+                return;
+
+            ExecuteSqlScript(File.ReadAllText(filePath));
         }
 
         #endregion

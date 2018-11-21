@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Nop.Core;
+using Nop.Core.Data;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
@@ -240,19 +241,21 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
             //settings
             _settingService.SaveSetting(new FixedByWeightByTotalSettings());
 
-            //database objects
-            var finder = new WebAppTypeFinder();
-            var assemb = new List<Assembly>() { _dbContext.GetType().Assembly };
 
-            var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
-            var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
+            if (!_dbContext.TableExists(nameof(ShippingByWeightByTotalRecord)))
+            {
+                var finder = new WebAppTypeFinder();
+                var assemb = new List<Assembly>() { EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly };
 
-            var _objectContext = new ShippingByWeightByTotalObjectContext(builder);
-            var str = _objectContext.GenerateCreateScript();
-            _dbContext.ExecuteSqlCommand(str);
+                var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
+                var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
 
-            _dbContext.SaveChanges();
+                var _objectContext = new ShippingByWeightByTotalObjectContext(builder);
+                var str = _objectContext.GenerateCreateScript();
+                _dbContext.ExecuteSqlScript(str);
 
+                _dbContext.SaveChanges();
+            }
 
             //locales
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Shipping.FixedByWeightByTotal.AddRecord", "Add record");

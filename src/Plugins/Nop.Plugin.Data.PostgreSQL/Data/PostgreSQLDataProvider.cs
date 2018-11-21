@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core.Data;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Extensions;
-using Nop.Plugin.Data.PostgreSQL.Data.Extensions;
 
 namespace Nop.Plugin.Data.PostgreSQL.Data
 {
@@ -49,10 +49,10 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
             context.ExecuteSqlScript(context.GenerateCreateScript());
 
             //create indexes
-            context.ExecutePostgreSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlIndexesFilePath));
+            context.ExecuteSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlIndexesFilePath));
 
             //create stored procedures 
-            context.ExecutePostgreSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlStoredProceduresFilePath));
+            context.ExecuteSqlScriptFromFile(fileProvider.MapPath(NopPostgreSQLDataDefaults.PostgreSqlStoredProceduresFilePath));
         }
 
         /// <summary>
@@ -84,5 +84,18 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         public string DataProviderName => _dataProviderName;
 
         #endregion
+
+        /// <summary>
+        /// Get SQL commands from the script
+        /// </summary>
+        /// <param name="sql">SQL script</param>
+        /// <returns>List of commands</returns>
+        public IList<string> GetCommandsFromScript(string sql)
+        {
+            sql = Regex.Replace(sql, @"\\\r?\n", string.Empty);
+            var batches = Regex.Split(sql, @"^----NEXT----", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+            return batches.ToList();
+        }
     }
 }
