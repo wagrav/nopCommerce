@@ -293,5 +293,14 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
                 EngineContext.Current.Resolve<IRoutePublisher>().RegisterRoutes(routeBuilder);
             });
         }
+
+        /// <summary>
+        /// Configure middleware middleware that checks is requests static file
+        /// </summary>
+        /// <param name="application">Builder for configuring an application's request pipeline</param>
+        public static void UseCheckStaticFile(this IApplicationBuilder application)
+        {
+            application.UseMiddleware<CheckStaticFileMiddleware>();
+        }
     }
 }

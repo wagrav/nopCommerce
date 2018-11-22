@@ -64,6 +64,9 @@ namespace Nop.Web.Framework.Infrastructure
             //use HTTP session
             application.UseSession();
 
+            //use check static files
+            application.UseCheckStaticFile();
+
             //use request localization
             application.UseRequestLocalization();
         }

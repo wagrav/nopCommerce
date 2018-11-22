@@ -19,11 +19,6 @@ namespace Nop.Web.Infrastructure
         /// <param name="routeBuilder">Route builder</param>
         public void RegisterRoutes(IRouteBuilder routeBuilder)
         {
-
-            routeBuilder.MapLocalizedRoute("Static", "{*url}",
-                new { controller = "Common", action = "PageNotFound" },
-                new { url = new Routeconstraints.IsStatic() });
-
             //and default one
             routeBuilder.MapRoute("Default", "{controller}/{action}/{id?}");
 
