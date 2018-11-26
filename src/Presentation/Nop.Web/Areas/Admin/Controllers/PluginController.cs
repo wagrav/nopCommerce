@@ -11,6 +11,7 @@ using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Tax;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Services.Authentication.External;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
@@ -276,7 +277,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 if (!pluginDescriptor.Installed)
                     return RedirectToAction("List");
 
-                var cureentDbProviderAssembly = EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly;
+                var cureentDbProviderAssembly = DataBaseManager.DataProviderAssembly;
 
                 if (cureentDbProviderAssembly == pluginDescriptor.ReferencedAssembly)
                 {

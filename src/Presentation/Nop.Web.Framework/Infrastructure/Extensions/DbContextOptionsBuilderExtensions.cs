@@ -27,12 +27,7 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            var dp = new EfDataProviderManager().DataProvider;
-            var typeFinder = new WebAppTypeFinder();
-            var dbContextType = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>()
-                                .FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
-            var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
-            dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
+            DataBaseManager.DbContextOptionsBuilderHelper.Configure(optionsBuilder, services, nopConfig, dataSettings);
         }
     }
 }

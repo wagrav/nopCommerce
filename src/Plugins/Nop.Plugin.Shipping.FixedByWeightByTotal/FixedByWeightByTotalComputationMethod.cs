@@ -244,11 +244,7 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal
 
             if (!_dbContext.TableExists(nameof(ShippingByWeightByTotalRecord)))
             {
-                var finder = new WebAppTypeFinder();
-                var assemb = new List<Assembly>() { EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly };
-
-                var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
-                var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
+                var builder = DataBaseManager.DbContextOptionsBuilderHelper;
 
                 var _objectContext = new ShippingByWeightByTotalObjectContext(builder);
                 var str = _objectContext.GenerateCreateScript();

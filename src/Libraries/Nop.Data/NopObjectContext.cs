@@ -218,7 +218,7 @@ namespace Nop.Data
         /// <param name="sql">SQL script</param>
         public void ExecuteSqlScript(string sql)
         {
-            var bdProvider = Core.Infrastructure.EngineContext.Current.Resolve<Core.Data.IDataProvider>();
+            var bdProvider = DataBaseManager.DataProvider;
             var sqlCommands = bdProvider.GetCommandsFromScript(sql);
             foreach (var command in sqlCommands)
                 ExecuteSqlCommand(command);
