@@ -1048,7 +1048,7 @@ namespace Nop.Services.Customers
 
             //filter by password format
             if (passwordFormat.HasValue)
-                query = query.Where(password => password.PasswordFormatId == (int)passwordFormat.Value);
+                query = query.Where(password => password.PasswordFormatId == Convert.ToInt32(passwordFormat.Value));
 
             //get the latest passwords
             if (passwordsToReturn.HasValue)

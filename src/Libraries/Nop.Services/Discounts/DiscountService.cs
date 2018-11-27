@@ -258,7 +258,7 @@ namespace Nop.Services.Discounts
 
             //filter by type
             if (discountType.HasValue)
-                query = query.Where(discount => discount.DiscountTypeId == (int)discountType.Value);
+                query = query.Where(discount => discount.DiscountTypeId == Convert.ToInt32(discountType.Value));
 
             query = query.OrderBy(discount => discount.Name).ThenBy(discount => discount.Id);
 
