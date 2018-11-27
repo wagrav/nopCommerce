@@ -16,13 +16,6 @@ namespace Nop.Data
         private static IDbContextOptionsBuilderHelper _dbContextOptionsBuilderHelper;
         private static Assembly _dataProviderAssembly;
 
-        private static int cout;
-
-        static DataBaseManager()
-        {
-            cout = 0;
-        }
-
         /// <summary>
         /// Current database provider
         /// </summary>
@@ -38,7 +31,6 @@ namespace Nop.Data
                 var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
                 _dbContextOptionsBuilderHelper = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
                 _dataProviderAssembly = _dataProvider.GetType().Assembly;
-                cout += 1;
             }
 
         }
@@ -57,12 +49,6 @@ namespace Nop.Data
         {
             get { return _dataProviderAssembly; }
         }
-
-        public static int Count
-        {
-            get { return cout; }
-        }
-
 
     }
 }

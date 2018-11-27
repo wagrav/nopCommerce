@@ -31,6 +31,7 @@ namespace Nop.Data
                     throw new NopException($"Not supported data provider name: '{providerName}'");
 
                 DataBaseManager.DataProvider = provider;
+
                 // create instance of current data provider
                 return provider;
             }

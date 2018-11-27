@@ -297,6 +297,10 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                         select p;
             }
 
+            //validate "categoryIds" parameter
+            if (categoryIds != null && categoryIds.Contains(0))
+                categoryIds.Remove(0);
+
             //category filtering
             if (categoryIds != null && categoryIds.Any())
             {
@@ -384,11 +388,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             //only distinct products (group by ID)
             //if we use standard Distinct() method, then all fields will be compared (low performance)
             //it'll not work in SQL Server Compact when searching products by a keyword)
-            query = from p in query
-                    group p by p.Id
-                into pGroup
-                    orderby pGroup.Key
-                    select pGroup.FirstOrDefault();
+            //query = from p in query
+            //        group p by p.Id
+            //    into pGroup
+            //        orderby pGroup.Key
+            //        select pGroup.FirstOrDefault();
+
 
             //sort products
             if (orderBy == ProductSortingEnum.Position && categoryIds != null && categoryIds.Any())

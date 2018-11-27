@@ -270,13 +270,6 @@ namespace Nop.Web.Framework.Infrastructure
             if (!DataSettingsManager.DatabaseIsInstalled)
                 return;
 
-            //builder.RegisterType<CopyProductService>().As<ICopyProductService>().InstancePerLifetimeScope();
-
-            //builder.Register(context => context.Resolve<IDataProviderManager>().DataProvider).As<IDataProvider>().InstancePerDependency();
-
-            //builder.Register(context => DataBaseManager.DataProvider).As<IDataProvider>().SingleInstance();
-
-
             var dp = DataBaseManager.DataProvider;
 
             if (dp.GetType().Assembly == typeof(SqlServerDataProvider).Assembly)
