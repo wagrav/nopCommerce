@@ -224,6 +224,54 @@ set @resources='
   <LocaleResource Name="Admin.Configuration.Plugins.ProviderIsUsed">
     <Value>This provider is currently used.</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Catalog.ExportImportProductUseLimitedToStores">
+    <Value>Export/Import products with "limited to stores"</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Catalog.ExportImportProductUseLimitedToStores.Hint">
+    <Value>Check if products should be exported/imported with "limited to stores" property.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Import.StoresDontExist">
+    <Value>Stores with the following names and/or IDs don''t exist: {0}</Value>
+  </LocaleResource>
+  <LocaleResource Name="Plugins.Payments.Square.Fields.Location.Select">
+    <Value>Select location</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.ShoppingCart.GroupTierPricesForDistinctShoppingCartItems">
+    <Value>Group tier prices for distinct shopping cart items</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.ShoppingCart.GroupTierPricesForDistinctShoppingCartItems.Hint">
+    <Value>Allows to offer special prices when customers buy bigger amounts of a particular product. For example, when a customer could have two shopping cart items for the same products (different product attributes).</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.ApplayChanges">
+    <Value>Restart application to apply changes</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.DiscardChanges">
+    <Value>Discard changes</Value>
+  </LocaleResource>  
+  <LocaleResource Name="Admin.Configuration.Plugins.ApplayChanges.Progress">
+    <Value>Applying changes on plugins...</Value>
+  </LocaleResource>    
+  <LocaleResource Name="Admin.Configuration.Plugins.DiscardChanges.Progress">
+    <Value>Discarding changes on plugins...</Value>
+  </LocaleResource>    
+  <LocaleResource Name="Admin.Configuration.Plugins.ChangesApplyAfterReboot">
+    <Value>Changes will be apply after restart application</Value>
+  </LocaleResource> 
+  <LocaleResource Name="ActivityLog.NotUninstalledPluginError">
+    <Value>The plugin "{0}" not uninstalled</Value>
+  </LocaleResource> 
+  <LocaleResource Name="ActivityLog.NotInstalledNewPluginError">
+    <Value>The plugin "{0}" not installed</Value>
+  </LocaleResource>   
+  <LocaleResource Name="ActivityLog.NotDeletedPluginError">
+    <Value>The plugin "{0}" not deleted</Value>
+  </LocaleResource> 
+  <LocaleResource Name="Admin.System.Warnings.PluginrRquiredAssembly">
+    <Value>the ''{0}'' plugin required the ''{1}'' assembly</Value>
+  </LocaleResource>  
+  <LocaleResource Name="Admin.System.Warnings.AssemblyHasCollision">
+    <Value>The ''{0}'' assembly has collision, application loaded the ''{1}'' assembly, but {2}</Value>
+  </LocaleResource>   
 </Language>
 '
 
@@ -962,6 +1010,7 @@ BEGIN
 END
 GO
 
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'messagessettings.usepopupnotifications')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
@@ -969,6 +1018,7 @@ BEGIN
 END
 GO
 
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'customersettings.passwordrequirelowercase')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
@@ -976,6 +1026,7 @@ BEGIN
 END
 GO
 
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'customersettings.passwordrequireuppercase')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
@@ -983,6 +1034,7 @@ BEGIN
 END
 GO
 
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'customersettings.passwordrequirenonalphanumeric')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
@@ -990,9 +1042,22 @@ BEGIN
 END
 GO
 
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'customersettings.passwordrequiredigit')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
     VALUES (N'customersettings.passwordrequiredigit', N'False', 0)
 END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'catalogsettings.exportimportproductuselimitedtostores')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'catalogsettings.exportimportproductuselimitedtostores', N'False', 0)
+END
+GO
+
+--updating of indexes in the Picture table for reduced table size after upgrade nopCommerce from 4.00 to 4.10 version
+ALTER INDEX ALL ON [Picture] REBUILD
 GO
