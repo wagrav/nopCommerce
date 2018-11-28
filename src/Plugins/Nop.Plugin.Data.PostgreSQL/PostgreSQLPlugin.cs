@@ -248,7 +248,7 @@ namespace Nop.Plugin.Data.PostgreSQL
         /// <summary>
         /// Returns provider name
         /// </summary>
-        public string DataProviderName => PostgreSQLDataProvider._dataProviderName;
+        public string DataProviderName => NopPostgreSQLDataDefaults.DataProviderName;
 
         #endregion
     }

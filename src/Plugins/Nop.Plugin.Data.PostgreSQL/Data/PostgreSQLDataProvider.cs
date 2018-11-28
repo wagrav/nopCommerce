@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
 using Nop.Core.Data;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
@@ -18,12 +17,6 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
     /// </summary>
     public class PostgreSQLDataProvider : IDataProvider
     {
-        #region Fields
-
-        internal static string _dataProviderName = "PostgreSQL";
-
-        #endregion
-
         #region Methods
 
         /// <summary>
@@ -64,6 +57,19 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
             return new SqlParameter();
         }
 
+        /// <summary>
+        /// Get SQL commands from the script
+        /// </summary>
+        /// <param name="sql">SQL script</param>
+        /// <returns>List of commands</returns>
+        public IList<string> GetCommandsFromScript(string sql)
+        {
+            sql = Regex.Replace(sql, @"\\\r?\n", string.Empty);
+            var batches = Regex.Split(sql, @"^----NEXT----", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+            return batches.ToList();
+        }
+
         #endregion
 
         #region Properties
@@ -81,21 +87,8 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
         /// <summary>
         /// Gets a data provider name
         /// </summary>
-        public string DataProviderName => _dataProviderName;
+        public string DataProviderName => NopPostgreSQLDataDefaults.DataProviderName;
 
         #endregion
-
-        /// <summary>
-        /// Get SQL commands from the script
-        /// </summary>
-        /// <param name="sql">SQL script</param>
-        /// <returns>List of commands</returns>
-        public IList<string> GetCommandsFromScript(string sql)
-        {
-            sql = Regex.Replace(sql, @"\\\r?\n", string.Empty);
-            var batches = Regex.Split(sql, @"^----NEXT----", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-
-            return batches.ToList();
-        }
     }
 }

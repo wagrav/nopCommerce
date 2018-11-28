@@ -75,7 +75,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Customers
                 { Value = createdFromUtc };
 
                 // getting postgresql native datetime string
-                pCreatedFromUtc = $"'{pgCreatedFromUtc.NpgsqlValue.ToString()}'";
+                pCreatedFromUtc = $"'{pgCreatedFromUtc.NpgsqlValue}'";
             }
 
             //creating null parameter sql request, NpgsqlParameter vith null value get exception
@@ -87,7 +87,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Customers
                 { Value = createdToUtc };
 
                 // getting postgresql native datetime string
-                pCreatedToUtc = $"'{pgCreatedToUtc.NpgsqlValue.ToString()}'";
+                pCreatedToUtc = $"'{pgCreatedToUtc.NpgsqlValue}'";
             }
 
             //invoke stored procedure

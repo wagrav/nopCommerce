@@ -14,5 +14,10 @@
         /// Gets a path to the file that contains script to create PostgreSQL Server stored procedures
         /// </summary>
         public static string PostgreSqlStoredProceduresFilePath => "~/Plugins/Data.PostgreSQL/Install/PostgeSQL.StoredProcedures.sql";
+
+        /// <summary>
+        /// Gets a data provider name
+        /// </summary>
+        public static string DataProviderName => "PostgreSQL";
     }
 }
