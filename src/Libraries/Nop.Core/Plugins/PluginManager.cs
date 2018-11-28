@@ -398,8 +398,15 @@ namespace Nop.Core.Plugins
                             throw new Exception($"A plugin with '{pluginDescriptor.SystemName}' system name is already defined");
 
                         //set 'Installed' property
-                        pluginDescriptor.Installed = installedPluginSystemNames
-                            .FirstOrDefault(x => x.Equals(pluginDescriptor.SystemName, StringComparison.InvariantCultureIgnoreCase)) != null;
+                        if (!Data.DataSettingsManager.DatabaseIsInstalled && pluginDescriptor.SystemName.StartsWith("Data."))
+                        {
+                            pluginDescriptor.Installed = true;
+                        }
+                        else
+                        {
+                            pluginDescriptor.Installed = installedPluginSystemNames
+                                .FirstOrDefault(x => x.Equals(pluginDescriptor.SystemName, StringComparison.InvariantCultureIgnoreCase)) != null;
+                        }
 
                         try
                         {
@@ -427,7 +434,8 @@ namespace Nop.Core.Plugins
 
                             pluginDescriptor.OriginalAssemblyFile = mainPluginFile;
 
-                            if(PluginsInfo.NeedToPerform(pluginDescriptor.SystemName))
+                            if(PluginsInfo.NeedToPerform(pluginDescriptor.SystemName) ||
+                                (!Data.DataSettingsManager.DatabaseIsInstalled && pluginDescriptor.SystemName.StartsWith("Data.")) )
                             {
                                 //shadow copy main plugin file
                                 pluginDescriptor.ReferencedAssembly = PerformFileDeploy(mainPluginFile, applicationPartManager, config);

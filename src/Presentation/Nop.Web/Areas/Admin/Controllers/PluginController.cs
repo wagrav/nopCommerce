@@ -311,7 +311,15 @@ namespace Nop.Web.Areas.Admin.Controllers
                 //check whether plugin is installed
                 if (!pluginDescriptor.Installed)
                     return RedirectToAction("List");
-               
+
+                var cureentDbProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+
+                if (cureentDbProviderAssembly == pluginDescriptor.ReferencedAssembly)
+                {
+                    _notificationService.ErrorNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ProviderIsUsed"));
+                    return RedirectToAction("List");
+                }
+
                 PluginManager.PluginsInfo.AddToUnInstall(pluginDescriptor.SystemName);
                 pluginDescriptor.ShowInPluginsList = false;
                 _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Configuration.Plugins.ChangesApplyAfterReboot"));
