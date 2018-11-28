@@ -29,12 +29,7 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            var typeFinder = new WebAppTypeFinder();
-            var dbContextType = typeFinder
-                .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderType.Assembly })
-                .FirstOrDefault();
-
-            var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
+            var dbContext = EngineContext.Current.Resolve<IDbContextOptionsBuilderHelper>();
             dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
         }
     }

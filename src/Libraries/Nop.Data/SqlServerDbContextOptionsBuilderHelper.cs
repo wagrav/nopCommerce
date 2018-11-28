@@ -33,7 +33,7 @@ namespace Nop.Data
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            //register copitns for Ms Sql Server
+            //register options for Ms Sql Server
             var dbContextOptionsBuilder = optionsBuilder.UseLazyLoadingProxies();
 
             if (nopConfig.UseRowNumberForPaging)

@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Nop.Core;
+using Nop.Core.Data;
+using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data.Mapping;
 
@@ -218,7 +220,7 @@ namespace Nop.Data
         /// <param name="sql">SQL script</param>
         public void ExecuteSqlScript(string sql)
         {
-            var bdProvider = Core.Infrastructure.EngineContext.Current.Resolve<Core.Data.IDataProvider>();
+            var bdProvider = EngineContext.Current.Resolve<IDataProvider>();
             var sqlCommands = bdProvider.GetCommandsFromScript(sql);
             foreach (var command in sqlCommands)
                 ExecuteSqlCommand(command);

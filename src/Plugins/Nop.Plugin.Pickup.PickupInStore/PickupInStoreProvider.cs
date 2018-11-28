@@ -127,11 +127,7 @@ namespace Nop.Plugin.Pickup.PickupInStore
 
             if (!_dbContext.TableExists(nameof(StorePickupPoint)))
             {
-                var finder = new WebAppTypeFinder();
-                var assemb = new List<Assembly>() { EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly };
-
-                var type = finder.FindClassesOfType<IDbContextOptionsBuilderHelper>(assemb).First();
-                var builder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(type);
+                var builder = EngineContext.Current.Resolve<IDbContextOptionsBuilderHelper>();
 
                 var _objectContext = new StorePickupPointObjectContext(builder);
                 var str = _objectContext.GenerateCreateScript();

@@ -276,7 +276,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 if (!pluginDescriptor.Installed)
                     return RedirectToAction("List");
 
-                var cureentDbProviderAssembly = EngineContext.Current.Resolve<IDataProvider>().GetType().Assembly;
+                var cureentDbProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
 
                 if (cureentDbProviderAssembly == pluginDescriptor.ReferencedAssembly)
                 {

@@ -231,7 +231,7 @@ namespace Nop.Data
         /// <summary>
         /// Reutuns provider name
         /// </summary>
-        public string DataProviderName => SqlServerDataProvider._dataProviderName;
+        public string DataProviderName => NopDataDefaults.DataProviderName;
 
         /// <summary>
         /// A value indicating whether we use MARS (Multiple Active Result Sets)

@@ -135,8 +135,17 @@ namespace Nop.Web.Framework.Infrastructure
 
             //data layer
             var dataProviderType = DataSettingsManager.DataProviderType;
-            if(dataProviderType != null)
+            Type contextBuilderType = null;
+
+            if (dataProviderType != null)
+            {
                 builder.RegisterType(dataProviderType).As<IDataProvider>().InstancePerDependency();
+
+                //get type of IDbContextOptionsBuilderHelper
+                var dataProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+                contextBuilderType = typeFinder
+                    .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderAssembly }).FirstOrDefault();
+            }
             else
                 builder.Register(context =>
                 {
@@ -145,9 +154,27 @@ namespace Nop.Web.Framework.Infrastructure
 
                     if (provider == null)
                         throw new NopException($"Not supported data provider name: '{DataSettingsManager.LoadSettings()?.DataProvider}'");
-            
+
                     return provider;
                 }).As<IDataProvider>().InstancePerDependency();
+
+            if (contextBuilderType != null)
+            {
+                builder.RegisterType(contextBuilderType).As<IDbContextOptionsBuilderHelper>().InstancePerDependency();
+            }
+            else
+            {
+                builder.Register(context =>
+                {
+                    var dataProviderAssembly = DataSettingsManager.DataProviderType.Assembly;
+                    var optionsBuilderType = typeFinder
+                        .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderAssembly }).FirstOrDefault();
+
+                    var optionsBuilder = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(optionsBuilderType);
+
+                    return optionsBuilder;
+                }).As<IDbContextOptionsBuilderHelper>().InstancePerDependency();
+            }
 
             InitDbContext(builder, typeFinder, config);
 
