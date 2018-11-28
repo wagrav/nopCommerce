@@ -63,6 +63,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
             IRepository<StockQuantityHistory> stockQuantityHistoryRepository,
             IRepository<StoreMapping> storeMappingRepository,
             IRepository<TierPrice> tierPriceRepository,
+            IStoreService storeService,
             IStoreMappingService storeMappingService,
             IWorkContext workContext,
             LocalizationSettings localizationSettings)
@@ -88,6 +89,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
                 stockQuantityHistoryRepository,
                 storeMappingRepository,
                 tierPriceRepository,
+                storeService,
                 storeMappingService,
                 workContext,
                 localizationSettings)
