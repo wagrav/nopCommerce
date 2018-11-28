@@ -23,14 +23,17 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         {
             var nopConfig = services.BuildServiceProvider().GetRequiredService<NopConfig>();
 
+            var dataProviderType = DataSettingsManager.DataProviderType;
+
             var dataSettings = DataSettingsManager.LoadSettings();
             if (!dataSettings?.IsValid ?? true)
                 return;
 
-            var dp = new EfDataProviderManager().DataProvider;
             var typeFinder = new WebAppTypeFinder();
-            var dbContextType = typeFinder.FindClassesOfType<IDbContextOptionsBuilderHelper>()
-                                .FirstOrDefault(p => p.Assembly == dp.GetType().Assembly);
+            var dbContextType = typeFinder
+                .FindClassesOfType<IDbContextOptionsBuilderHelper>(new[] { dataProviderType.Assembly })
+                .FirstOrDefault();
+
             var dbContext = (IDbContextOptionsBuilderHelper)Activator.CreateInstance(dbContextType);
             dbContext.Configure(optionsBuilder, services, nopConfig, dataSettings);
         }

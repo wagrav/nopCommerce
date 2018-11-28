@@ -8,10 +8,16 @@
   <ItemGroup>
     <Compile Remove="Components\**" />
     <Compile Remove="Controllers\**" />
+    <Compile Remove="Models\**" />
+    <Compile Remove="Services\Localization\**" />
     <EmbeddedResource Remove="Components\**" />
     <EmbeddedResource Remove="Controllers\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <EmbeddedResource Remove="Services\Localization\**" />
     <None Remove="Components\**" />
     <None Remove="Controllers\**" />
+    <None Remove="Models\**" />
+    <None Remove="Services\Localization\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,9 +77,7 @@
 
   <ItemGroup>
     <Folder Include="Install\" />
-    <Folder Include="Models\" />
     <Folder Include="Services\" />
-    <Folder Include="Services\Localization\" />
   </ItemGroup>
 
   <!-- This target execute after "Build" target -->
