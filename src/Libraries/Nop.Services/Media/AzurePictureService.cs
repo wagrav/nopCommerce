@@ -42,6 +42,7 @@ namespace Nop.Services.Media
 
         public AzurePictureService(IDataProvider dataProvider,
             IDbContext dbContext,
+            IDownloadService downloadService,
             IEventPublisher eventPublisher,
             INopFileProvider fileProvider,
             IProductAttributeParser productAttributeParser,
@@ -56,6 +57,7 @@ namespace Nop.Services.Media
             NopConfig config)
             : base(dataProvider,
                   dbContext,
+                  downloadService,
                   eventPublisher,
                   fileProvider,
                   productAttributeParser,
@@ -138,12 +140,14 @@ namespace Nop.Services.Media
             await DeletePictureThumbsAsync(picture);
         }
 
+
         /// <summary>
         /// Get picture (thumb) local path
         /// </summary>
         /// <param name="thumbFileName">Filename</param>
+        /// <param name="thumbsPath">Thumb path</param>
         /// <returns>Local picture thumb path</returns>
-        protected override string GetThumbLocalPath(string thumbFileName)
+        protected override string GetThumbLocalPath(string thumbFileName, string thumbsPath ="")
         {
             var path = _azureBlobStorageAppendContainerName ? _azureBlobStorageContainerName + "/" : string.Empty;
 

@@ -34,5 +34,10 @@ namespace Nop.Core.Domain.Media
         /// Gets or sets the picture binary
         /// </summary>
         public virtual PictureBinary PictureBinary { get; set; }
+
+        /// <summary>
+        /// Gets or sets the picture virtual path
+        /// </summary>
+        public string VirtualPath { get; set; }
     }
 }

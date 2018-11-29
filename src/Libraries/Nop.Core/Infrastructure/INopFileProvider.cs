@@ -252,6 +252,13 @@ namespace Nop.Core.Infrastructure
         string GetParentDirectory(string directoryPath);
 
         /// <summary>
+        /// Gets a virtual path from a physical disk path.
+        /// </summary>
+        /// <param name="path">The physical disk path</param>
+        /// <returns>The virtual path. E.g. "~/bin"</returns>
+        string GetVirtualPath(string path);
+
+        /// <summary>
         /// Checks if the path is directory
         /// </summary>
         /// <param name="path">Path for check</param>

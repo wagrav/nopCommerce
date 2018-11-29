@@ -2,6 +2,8 @@ using Autofac;
 using Nop.Core.Configuration;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
+using Nop.Services.Media;
+using Nop.Services.RoxyFileman;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Framework.Factories;
 using Nop.Web.Infrastructure.Installation;
@@ -84,6 +86,16 @@ namespace Nop.Web.Infrastructure
             builder.RegisterType<VendorModelFactory>().As<IVendorModelFactory>().InstancePerLifetimeScope();
             builder.RegisterType<WidgetModelFactory>().As<IWidgetModelFactory>().InstancePerLifetimeScope();
 
+            builder.Register(context =>
+            {
+                var pictureService = context.Resolve<IPictureService>();
+
+                return EngineContext.Current.ResolveUnregistered(pictureService.StoreInDb
+                    ? typeof(DatabaseRoxyFilemanService)
+                    : typeof(FileRoxyFilemanService));
+
+            }).As<IRoxyFilemanService>().InstancePerLifetimeScope();
+
             //factories
             builder.RegisterType<Factories.AddressModelFactory>().As<Factories.IAddressModelFactory>().InstancePerLifetimeScope();
             builder.RegisterType<Factories.BlogModelFactory>().As<Factories.IBlogModelFactory>().InstancePerLifetimeScope();
@@ -111,9 +123,6 @@ namespace Nop.Web.Infrastructure
         /// <summary>
         /// Gets order of this dependency registrar implementation
         /// </summary>
-        public int Order
-        {
-            get { return 2; }
-        }
+        public int Order => 2;
     }
 }

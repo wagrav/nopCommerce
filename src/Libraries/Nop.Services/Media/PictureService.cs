@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Data;
 using Nop.Core.Domain.Catalog;
@@ -36,6 +37,7 @@ namespace Nop.Services.Media
 
         private readonly IDataProvider _dataProvider;
         private readonly IDbContext _dbContext;
+        private readonly IDownloadService _downloadService;
         private readonly IEventPublisher _eventPublisher;
         private readonly INopFileProvider _fileProvider;
         private readonly IProductAttributeParser _productAttributeParser;
@@ -46,6 +48,7 @@ namespace Nop.Services.Media
         private readonly IUrlRecordService _urlRecordService;
         private readonly IWebHelper _webHelper;
         private readonly MediaSettings _mediaSettings;
+        
 
         #endregion
 
@@ -53,6 +56,7 @@ namespace Nop.Services.Media
 
         public PictureService(IDataProvider dataProvider,
             IDbContext dbContext,
+            IDownloadService downloadService,
             IEventPublisher eventPublisher,
             INopFileProvider fileProvider,
             IProductAttributeParser productAttributeParser,
@@ -66,6 +70,7 @@ namespace Nop.Services.Media
         {
             this._dataProvider = dataProvider;
             this._dbContext = dbContext;
+            this._downloadService = downloadService;
             this._eventPublisher = eventPublisher;
             this._fileProvider = fileProvider;
             this._productAttributeParser = productAttributeParser;
@@ -135,37 +140,7 @@ namespace Nop.Services.Media
             //we invoke Math.Round to ensure that no white background is rendered - https://www.nopcommerce.com/boards/t/40616/image-resizing-bug.aspx
             return new Size((int)Math.Round(width), (int)Math.Round(height));
         }
-
-        /// <summary>
-        /// Returns the file extension from mime type.
-        /// </summary>
-        /// <param name="mimeType">Mime type</param>
-        /// <returns>File extension</returns>
-        protected virtual string GetFileExtensionFromMimeType(string mimeType)
-        {
-            if (mimeType == null)
-                return null;
-
-            //TODO use FileExtensionContentTypeProvider to get file extension
-
-            var parts = mimeType.Split('/');
-            var lastPart = parts[parts.Length - 1];
-            switch (lastPart)
-            {
-                case "pjpeg":
-                    lastPart = "jpg";
-                    break;
-                case "x-png":
-                    lastPart = "png";
-                    break;
-                case "x-icon":
-                    lastPart = "ico";
-                    break;
-            }
-
-            return lastPart;
-        }
-
+        
         /// <summary>
         /// Loads a picture from file
         /// </summary>
@@ -228,10 +203,11 @@ namespace Nop.Services.Media
         /// Get picture (thumb) local path
         /// </summary>
         /// <param name="thumbFileName">Filename</param>
+        /// <param name="thumbsPath">Thumb path</param>
         /// <returns>Local picture thumb path</returns>
-        protected virtual string GetThumbLocalPath(string thumbFileName)
+        protected virtual string GetThumbLocalPath(string thumbFileName, string thumbsPath = "")
         {
-            var thumbsDirectoryPath = _fileProvider.GetAbsolutePath(NopMediaDefaults.ImageThumbsPath);
+            var thumbsDirectoryPath = _fileProvider.GetAbsolutePath(string.IsNullOrEmpty(thumbsPath) ? NopMediaDefaults.ImageThumbsPath : thumbsPath.TrimStart('~').Trim('/').Replace("/", @"\"));
 
             if (_mediaSettings.MultipleThumbDirectories)
             {
@@ -414,6 +390,36 @@ namespace Nop.Services.Media
         #region Getting picture local path/URL methods
 
         /// <summary>
+        /// Returns the file extension from mime type.
+        /// </summary>
+        /// <param name="mimeType">Mime type</param>
+        /// <returns>File extension</returns>
+        public virtual string GetFileExtensionFromMimeType(string mimeType)
+        {
+            if (mimeType == null)
+                return null;
+
+            //TODO use FileExtensionContentTypeProvider to get file extension
+
+            var parts = mimeType.Split('/');
+            var lastPart = parts[parts.Length - 1];
+            switch (lastPart)
+            {
+                case "pjpeg":
+                    lastPart = "jpg";
+                    break;
+                case "x-png":
+                    lastPart = "png";
+                    break;
+                case "x-icon":
+                    lastPart = "ico";
+                    break;
+            }
+
+            return lastPart;
+        }
+
+        /// <summary>
         /// Gets the loaded picture binary depending on picture storage settings
         /// </summary>
         /// <param name="picture">Picture</param>
@@ -574,7 +580,7 @@ namespace Nop.Services.Media
                     : $"{picture.Id:0000000}_{targetSize}.{lastPart}";
             }
 
-            var thumbFilePath = GetThumbLocalPath(thumbFileName);
+            var thumbFilePath = GetThumbLocalPath(thumbFileName, picture.VirtualPath);
 
             //the named mutex helps to avoid creating the same files in different threads,
             //and does not decrease performance significantly, because the code is blocked only for the specific file.
@@ -675,17 +681,23 @@ namespace Nop.Services.Media
             _eventPublisher.EntityDeleted(picture);
         }
 
+
         /// <summary>
         /// Gets a collection of pictures
         /// </summary>
+        /// <param name="virtualPath">Virtual path</param>
         /// <param name="pageIndex">Current page</param>
         /// <param name="pageSize">Items on each page</param>
         /// <returns>Paged list of pictures</returns>
-        public virtual IPagedList<Picture> GetPictures(int pageIndex = 0, int pageSize = int.MaxValue)
+        public virtual IPagedList<Picture> GetPictures(string virtualPath="", int pageIndex = 0, int pageSize = int.MaxValue)
         {
-            var query = from p in _pictureRepository.Table
-                        orderby p.Id descending
-                        select p;
+            var query = _pictureRepository.Table;
+
+            if (!string.IsNullOrEmpty(virtualPath))
+                query = virtualPath.EndsWith('/') ? query.Where(p => p.VirtualPath.StartsWith(virtualPath) || p.VirtualPath == virtualPath.TrimEnd('/')) : query.Where(p => p.VirtualPath == virtualPath);
+
+            query = query.OrderByDescending(p => p.Id);
+
             var pics = new PagedList<Picture>(query, pageIndex, pageSize);
             return pics;
         }
@@ -758,6 +770,90 @@ namespace Nop.Services.Media
         }
 
         /// <summary>
+        /// Inserts a picture
+        /// </summary>
+        /// <param name="formFile">Form file</param>
+        /// <param name="qqFileName">File name which will be use if IFormFile.FileName not present</param>
+        /// <param name="virtualPath">Virtual path</param>
+        /// <returns>Picture</returns>
+        public virtual Picture InsertPicture(IFormFile formFile, string qqFileName = "", string virtualPath = "")
+        {
+            var imgExt = new List<string>
+            {
+                ".bmp",
+                ".gif",
+                ".jpeg",
+                ".jpg",
+                ".jpe",
+                ".jfif",
+                ".pjpeg",
+                ".pjp",
+                ".png",
+                ".tiff",
+                ".tif"
+            } as IReadOnlyCollection<string>;
+
+            var fileName = formFile.FileName;
+            if (string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(qqFileName))
+                fileName = qqFileName;
+
+            //remove path (passed in IE)
+            fileName = _fileProvider.GetFileName(fileName);
+
+            var contentType = formFile.ContentType;
+
+            var fileExtension = _fileProvider.GetFileExtension(fileName);
+            if (!string.IsNullOrEmpty(fileExtension))
+                fileExtension = fileExtension.ToLowerInvariant();
+
+            if (imgExt.All(ext => !ext.Equals(fileExtension, StringComparison.CurrentCultureIgnoreCase)))
+                return null;
+
+            //contentType is not always available 
+            //that's why we manually update it here
+            //http://www.sfsu.edu/training/mimetype.htm
+            if (string.IsNullOrEmpty(contentType))
+            {
+                switch (fileExtension)
+                {
+                    case ".bmp":
+                        contentType = MimeTypes.ImageBmp;
+                        break;
+                    case ".gif":
+                        contentType = MimeTypes.ImageGif;
+                        break;
+                    case ".jpeg":
+                    case ".jpg":
+                    case ".jpe":
+                    case ".jfif":
+                    case ".pjpeg":
+                    case ".pjp":
+                        contentType = MimeTypes.ImageJpeg;
+                        break;
+                    case ".png":
+                        contentType = MimeTypes.ImagePng;
+                        break;
+                    case ".tiff":
+                    case ".tif":
+                        contentType = MimeTypes.ImageTiff;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            var picture = InsertPicture(_downloadService.GetDownloadBits(formFile), contentType, _fileProvider.GetFileNameWithoutExtension(fileName));
+
+            if (string.IsNullOrEmpty(virtualPath))
+                return picture;
+
+            picture.VirtualPath = _fileProvider.GetVirtualPath(virtualPath);
+            _pictureRepository.Update(picture);
+
+            return picture;
+        }
+
+        /// <summary>
         /// Updates the picture
         /// </summary>
         /// <param name="pictureId">The picture identifier</param>
@@ -800,6 +896,36 @@ namespace Nop.Services.Media
 
             if (!StoreInDb)
                 SavePictureInFile(picture.Id, pictureBinary, mimeType);
+
+            //event notification
+            _eventPublisher.EntityUpdated(picture);
+
+            return picture;
+        }
+
+        /// <summary>
+        /// Updates the picture
+        /// </summary>
+        /// <param name="picture">The picture to update</param>
+        /// <returns>Picture</returns>
+        public virtual Picture UpdatePicture(Picture picture)
+        {
+            if (picture == null)
+                return null;
+
+            var seoFilename = CommonHelper.EnsureMaximumLength(picture.SeoFilename, 100);
+
+            //delete old thumbs if a picture has been changed
+            if (seoFilename != picture.SeoFilename)
+                DeletePictureThumbs(picture);
+
+            picture.SeoFilename = seoFilename;
+
+            _pictureRepository.Update(picture);
+            UpdatePictureBinary(picture, StoreInDb ? picture.PictureBinary.BinaryData : new byte[0]);
+
+            if (!StoreInDb)
+                SavePictureInFile(picture.Id, picture.PictureBinary.BinaryData, picture.MimeType);
 
             //event notification
             _eventPublisher.EntityUpdated(picture);
@@ -939,7 +1065,7 @@ namespace Nop.Services.Media
                 {
                     while (true)
                     {
-                        var pictures = GetPictures(pageIndex, pageSize);
+                        var pictures = GetPictures(pageIndex: pageIndex, pageSize: pageSize);
                         pageIndex++;
 
                         //all pictures converted?

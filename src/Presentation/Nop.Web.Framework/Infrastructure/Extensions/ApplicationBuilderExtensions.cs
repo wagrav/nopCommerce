@@ -18,6 +18,7 @@ using Nop.Core.Http;
 using Nop.Core.Infrastructure;
 using Nop.Services.Authentication;
 using Nop.Services.Logging;
+using Nop.Services.RoxyFileman;
 using Nop.Web.Framework.Globalization;
 using Nop.Web.Framework.Mvc.Routing;
 
@@ -173,27 +174,25 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         /// <param name="application">Builder for configuring an application's request pipeline</param>
         public static void UseNopStaticFiles(this IApplicationBuilder application)
         {
+            void StaticFileResponse(StaticFileResponseContext context)
+            {
+                if (!DataSettingsManager.DatabaseIsInstalled) return;
+
+                var commonSettings = EngineContext.Current.Resolve<CommonSettings>();
+                if (!string.IsNullOrEmpty(commonSettings.StaticFilesCacheControl)) context.Context.Response.Headers.Append(HeaderNames.CacheControl, commonSettings.StaticFilesCacheControl);
+            }
+
             var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
 
-            Action<StaticFileResponseContext> staticFileResponse = (context) =>
-            {
-                if (DataSettingsManager.DatabaseIsInstalled)
-                {
-                    var commonSettings = EngineContext.Current.Resolve<CommonSettings>();
-                    if (!string.IsNullOrEmpty(commonSettings.StaticFilesCacheControl))
-                        context.Context.Response.Headers.Append(HeaderNames.CacheControl, commonSettings.StaticFilesCacheControl);
-                }
-            };
-
             //common static files
-            application.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = staticFileResponse });
+            application.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = StaticFileResponse });
 
             //themes static files
             application.UseStaticFiles(new StaticFileOptions
             {
                 FileProvider = new PhysicalFileProvider(fileProvider.MapPath(@"Themes")),
                 RequestPath = new PathString("/Themes"),
-                OnPrepareResponse = staticFileResponse
+                OnPrepareResponse = StaticFileResponse
             });
 
             //plugins static files
@@ -201,7 +200,7 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
             {
                 FileProvider = new PhysicalFileProvider(fileProvider.MapPath(@"Plugins")),
                 RequestPath = new PathString("/Plugins"),
-                OnPrepareResponse = staticFileResponse
+                OnPrepareResponse = StaticFileResponse
             };
 
             if (DataSettingsManager.DatabaseIsInstalled)
@@ -223,6 +222,7 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
                     staticFileOptions.ContentTypeProvider = fileExtensionContentTypeProvider;
                 }
             }
+
             application.UseStaticFiles(staticFileOptions);
 
             //add support for backups
@@ -238,6 +238,15 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
                 ContentTypeProvider = provider
             });
 
+            if (DataSettingsManager.DatabaseIsInstalled)
+            {
+                application.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new RoxyFilemanProvider(fileProvider.GetAbsolutePath(NopRoxyFilemanDefaults.DefaultRootDirectory.TrimStart('/').Split('/'))),
+                    RequestPath = new PathString(NopRoxyFilemanDefaults.DefaultRootDirectory),
+                    OnPrepareResponse = StaticFileResponse
+                });
+            }
         }
 
         /// <summary>
