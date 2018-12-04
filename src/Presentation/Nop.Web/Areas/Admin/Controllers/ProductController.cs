@@ -1515,6 +1515,9 @@ namespace Nop.Web.Areas.Admin.Controllers
             //prepare model
             var model = _productModelFactory.PrepareAddAssociatedProductSearchModel(new AddAssociatedProductSearchModel());
 
+            //set current product id
+            model.ProductId = productId;
+
             return View(model);
         }
 

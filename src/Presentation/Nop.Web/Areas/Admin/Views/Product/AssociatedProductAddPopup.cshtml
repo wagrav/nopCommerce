@@ -120,7 +120,8 @@
                                                         SearchManufacturerId: $('#SearchManufacturerId').val(),
                                                         SearchStoreId: $('#SearchStoreId').val(),
                                                         SearchVendorId: $('#SearchVendorId').val(),
-                                                        SearchProductTypeId: $('#SearchProductTypeId').val()
+                                                        SearchProductTypeId: $('#SearchProductTypeId').val(),
+                                                        ProductId: @Model.ProductId
                                                     };
                                                     addAntiForgeryToken(data);
                                                     return data;

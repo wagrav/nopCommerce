@@ -1294,26 +1294,31 @@ namespace Nop.Web.Areas.Admin.Factories
                 keywords: searchModel.SearchProductName,
                 pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
 
+            //filtering products and exclude current product from list
+            var filteredProducts = products.Select(product =>
+            {
+                //fill in model values from the entity
+                var productModel = product.ToModel<ProductModel>();
+
+                //fill in additional values (not existing in the entity)
+                productModel.SeName = _urlRecordService.GetSeName(product, 0, true, false);
+                var parentGroupedProduct = _productService.GetProductById(product.ParentGroupedProductId);
+                if (parentGroupedProduct == null)
+                    return productModel;
+
+                productModel.AssociatedToProductId = product.ParentGroupedProductId;
+                productModel.AssociatedToProductName = parentGroupedProduct.Name;
+
+
+
+                return productModel;
+            }).Where(product => product.Id != searchModel.ProductId);
+
             //prepare grid model
             var model = new AddAssociatedProductListModel
             {
-                Data = products.Select(product =>
-                {
-                    //fill in model values from the entity
-                    var productModel = product.ToModel<ProductModel>();
-
-                    //fill in additional values (not existing in the entity)
-                    productModel.SeName = _urlRecordService.GetSeName(product, 0, true, false);
-                    var parentGroupedProduct = _productService.GetProductById(product.ParentGroupedProductId);
-                    if (parentGroupedProduct == null)
-                        return productModel;
-
-                    productModel.AssociatedToProductId = product.ParentGroupedProductId;
-                    productModel.AssociatedToProductName = parentGroupedProduct.Name;
-
-                    return productModel;
-                }),
-                Total = products.TotalCount
+                Data = filteredProducts,
+                Total = filteredProducts.Count()
             };
 
             return model;
