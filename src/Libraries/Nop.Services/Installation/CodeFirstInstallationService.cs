@@ -6170,7 +6170,8 @@ namespace Nop.Services.Installation
                 ExportImportProductsCountInOneFile = 500,
                 ExportImportSplitProductsFile = false,
                 ExportImportRelatedEntitiesByName = true,
-                CountDisplayedYearsDatePicker = 1
+                CountDisplayedYearsDatePicker = 1,
+                UseAjaxLoadMenu = false
             });
 
             settingService.SaveSetting(new LocalizationSettings
