@@ -43,6 +43,5 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Data
         }
 
         #endregion
-
     }
 }

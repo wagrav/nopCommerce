@@ -6,6 +6,9 @@ using Nop.Core.Infrastructure.DependencyManagement;
 
 namespace Nop.Data
 {
+    /// <summary>
+    /// Represents database context registrar
+    /// </summary>
     public class ContextRegistrar : IDbContextRegistrar
     {
         /// <summary>

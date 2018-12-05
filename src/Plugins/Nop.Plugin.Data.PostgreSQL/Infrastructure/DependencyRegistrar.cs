@@ -10,6 +10,12 @@ namespace Nop.Plugin.Data.PostgreSQL.Infrastructure
 {
     public class DependencyRegistrar : IDbDependencyRegistrar
     {
+        /// <summary>
+        /// Register  services and interfaces specific for DB
+        /// </summary>
+        /// <param name="builder">Container builder</param>
+        /// <param name="typeFinder">Type finder</param>
+        /// <param name="config">Config</param>
         public void Register(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
         {
             //services

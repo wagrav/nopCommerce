@@ -46,7 +46,7 @@ namespace Nop.Data
                 configuration.ApplyConfiguration(modelBuilder);
             }
 
-            var typeFinder = new Core.Infrastructure.WebAppTypeFinder();
+            var typeFinder = new WebAppTypeFinder();
             var dbModels = typeFinder.FindClassesOfType<IDbModelRegistrar>();
 
             foreach (var dbModel in dbModels)
@@ -66,8 +66,11 @@ namespace Nop.Data
         /// <returns>Modified raw SQL query</returns>
         protected virtual string CreateSqlWithParameters(string sql, params object[] parameters)
         {
+            if (parameters == null)
+                return sql;
+
             //add parameters to sql
-            for (var i = 0; i <= (parameters?.Length ?? 0) - 1; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
                 if (!(parameters[i] is DbParameter parameter))
                     continue;
@@ -102,7 +105,7 @@ namespace Nop.Data
         /// <returns>A SQL script</returns>
         public virtual string GenerateCreateScript()
         {
-            return this.Database.GenerateCreateScript();
+            return Database.GenerateCreateScript();
         }
 
         /// <summary>
@@ -113,7 +116,7 @@ namespace Nop.Data
         /// <returns>An IQueryable representing the raw SQL query</returns>
         public virtual IQueryable<TQuery> QueryFromSql<TQuery>(string sql) where TQuery : class
         {
-            return this.Query<TQuery>().FromSql(sql);
+            return Query<TQuery>().FromSql(sql);
         }
         
         /// <summary>
@@ -125,7 +128,7 @@ namespace Nop.Data
         /// <returns>An IQueryable representing the raw SQL query</returns>
         public virtual IQueryable<TEntity> EntityFromSql<TEntity>(string sql, params object[] parameters) where TEntity : BaseEntity
         {
-            return this.Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
+            return Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
         }
 
         /// <summary>
@@ -139,24 +142,24 @@ namespace Nop.Data
         public virtual int ExecuteSqlCommand(RawSqlString sql, bool doNotEnsureTransaction = false, int? timeout = null, params object[] parameters)
         {
             //set specific command timeout
-            var previousTimeout = this.Database.GetCommandTimeout();
-            this.Database.SetCommandTimeout(timeout);
+            var previousTimeout = Database.GetCommandTimeout();
+            Database.SetCommandTimeout(timeout);
 
-            var result = 0;
+            int result;
             if (!doNotEnsureTransaction)
             {
                 //use with transaction
-                using (var transaction = this.Database.BeginTransaction())
+                using (var transaction = Database.BeginTransaction())
                 {
-                    result = this.Database.ExecuteSqlCommand(sql, parameters);
+                    result = Database.ExecuteSqlCommand(sql, parameters);
                     transaction.Commit();
                 }
             }
             else
-                result = this.Database.ExecuteSqlCommand(sql, parameters);
+                result = Database.ExecuteSqlCommand(sql, parameters);
             
             //return previous timeout back
-            this.Database.SetCommandTimeout(previousTimeout);
+            Database.SetCommandTimeout(previousTimeout);
             
             return result;
         }
@@ -171,7 +174,7 @@ namespace Nop.Data
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            var entityEntry = this.Entry(entity);
+            var entityEntry = Entry(entity);
             if (entityEntry == null)
                 return;
             
@@ -216,7 +219,6 @@ namespace Nop.Data
         /// <summary>
         /// Execute commands from the SQL script against the context database
         /// </summary>
-        /// <param name="context">Database context</param>
         /// <param name="sql">SQL script</param>
         public void ExecuteSqlScript(string sql)
         {
@@ -229,11 +231,9 @@ namespace Nop.Data
         /// <summary>
         /// Execute commands from a file with SQL script against the context database
         /// </summary>
-        /// <param name="context">Database context</param>
         /// <param name="filePath">Path to the file</param>
         public void ExecuteSqlScriptFromFile(string filePath)
         {
-
             if (!File.Exists(filePath))
                 return;
 

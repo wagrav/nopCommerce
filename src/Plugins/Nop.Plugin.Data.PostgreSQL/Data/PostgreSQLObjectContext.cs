@@ -10,15 +10,22 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
     /// </summary>
     public partial class NopObjectContext : Nop.Data.NopObjectContext
     {
+        #region Ctor
+
         public NopObjectContext(DbContextOptions<Nop.Data.NopObjectContext> options) : base(options)
         {
         }
 
-        public override IQueryable<TEntity> EntityFromSql<TEntity>(string sql, params object[] parameters)
-        {
-            return Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
-        }
+        #endregion
 
+        #region Utilities
+
+        /// <summary>
+        /// Modify the input SQL query by adding passed parameters
+        /// </summary>
+        /// <param name="sql">The raw SQL query</param>
+        /// <param name="parameters">The values to be assigned to parameters</param>
+        /// <returns>Modified raw SQL query</returns>
         protected override string CreateSqlWithParameters(string sql, params object[] parameters)
         {
             var paramstring =
@@ -27,6 +34,22 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
 
             sql = $"SELECT * FROM {sql} ({paramstring ?? string.Empty})";
             return sql;
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Creates a LINQ query for the entity based on a raw SQL query
+        /// </summary>
+        /// <typeparam name="TEntity">Entity type</typeparam>
+        /// <param name="sql">The raw SQL query</param>
+        /// <param name="parameters">The values to be assigned to parameters</param>
+        /// <returns>An IQueryable representing the raw SQL query</returns>
+        public override IQueryable<TEntity> EntityFromSql<TEntity>(string sql, params object[] parameters)
+        {
+            return Set<TEntity>().FromSql(CreateSqlWithParameters(sql, parameters), parameters);
         }
 
         /// <summary>
@@ -43,5 +66,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Data
             ExecuteSqlCommand(dbScript);
             SaveChanges();
         }
+
+        #endregion
     }
 }

@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using Nop.Core.Data;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
-using Nop.Data.Extensions;
 
 namespace Nop.Data
 {

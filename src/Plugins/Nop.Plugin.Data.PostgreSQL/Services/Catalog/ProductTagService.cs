@@ -12,7 +12,7 @@ namespace Nop.Plugin.Data.PostgreSQL.Services.Catalog
 {
     public class ProductTagService : Nop.Services.Catalog.ProductTagService
     {
-        #region Fileds
+        #region Fields
 
         private readonly IStaticCacheManager _staticCacheManager;
         private readonly IDbContext _dbContext;

@@ -8,7 +8,7 @@ namespace Nop.Core.Infrastructure.DependencyManagement
     public interface IDbModelRegistrar
     {
         /// <summary>
-        /// Register batabase model
+        /// Register database model
         /// </summary>
         /// <param name="modelBuilder">Model builder</param>
         void ModelCreating(ModelBuilder modelBuilder);

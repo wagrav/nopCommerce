@@ -7,7 +7,7 @@ namespace Nop.Plugin.Pickup.PickupInStore.Infrastructure
     public class DbModelRegistrar : IDbModelRegistrar
     {
         /// <summary>
-        /// Register batabase model
+        /// Register database model
         /// </summary>
         /// <param name="modelBuilder">Model builder</param>
         public void ModelCreating(ModelBuilder modelBuilder)
@@ -16,7 +16,7 @@ namespace Nop.Plugin.Pickup.PickupInStore.Infrastructure
         }
 
         /// <summary>
-        /// Order of this batabase model registrar implementation
+        /// Order of this database model registrar implementation
         /// </summary>
         public int Order => 1;
     }

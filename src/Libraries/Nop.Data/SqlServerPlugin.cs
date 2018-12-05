@@ -229,7 +229,7 @@ namespace Nop.Data
         #region Properties
 
         /// <summary>
-        /// Reutuns provider name
+        /// Returns provider name
         /// </summary>
         public string DataProviderName => NopDataDefaults.DataProviderName;
 

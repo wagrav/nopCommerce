@@ -11,7 +11,6 @@ namespace Nop.Plugin.Pickup.PickupInStore.Data
     /// </summary>
     public class StorePickupPointObjectContext : DbContext
     {
-
         #region Fields
 
         private readonly IDbContextOptionsBuilderHelper _opitonsBuilder;
@@ -33,7 +32,7 @@ namespace Nop.Plugin.Pickup.PickupInStore.Data
 
         public string GenerateCreateScript()
         {
-            return this.Database.GenerateCreateScript();
+            return Database.GenerateCreateScript();
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -47,9 +46,5 @@ namespace Nop.Plugin.Pickup.PickupInStore.Data
         }
 
         #endregion
-
-
     }
-
-
 }
