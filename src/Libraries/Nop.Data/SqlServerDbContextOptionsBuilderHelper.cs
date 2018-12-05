@@ -40,7 +40,6 @@ namespace Nop.Data
                 dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString, option => option.UseRowNumberForPaging());
             else
                 dbContextOptionsBuilder.UseSqlServer(dataSettings.DataConnectionString);
-
         }
     }
 }
