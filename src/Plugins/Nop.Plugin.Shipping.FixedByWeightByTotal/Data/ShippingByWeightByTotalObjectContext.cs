@@ -14,6 +14,8 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Data
         #region Fields
 
         private readonly IDbContextOptionsBuilderHelper _opitonsBuilder;
+
+        //represents the ShippingByWeightByTotalRecord entities in the context
         private DbSet<ShippingByWeightByTotalRecord> ShippingByWeightByTotalRecord { get; set; }
 
         #endregion
@@ -28,6 +30,10 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Data
 
         #region Methods
 
+        /// <summary>
+        /// Configure db context options to use database provider.
+        /// </summary>
+        /// <param name="optionsBuilder">Database context options builder</param>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var nopConfig = EngineContext.Current.Resolve<NopConfig>();
@@ -37,6 +43,10 @@ namespace Nop.Plugin.Shipping.FixedByWeightByTotal.Data
             _opitonsBuilder.SetDbContextOptions(optionsBuilder, nopConfig, dataSettings);
         }
 
+        /// <summary>
+        /// Generate a script to create all tables for the current model
+        /// </summary>
+        /// <returns>A SQL script</returns>
         public string GenerateCreateScript()
         {
             return Database.GenerateCreateScript();

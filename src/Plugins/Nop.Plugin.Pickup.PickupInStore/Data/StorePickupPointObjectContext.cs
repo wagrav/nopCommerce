@@ -15,6 +15,7 @@ namespace Nop.Plugin.Pickup.PickupInStore.Data
 
         private readonly IDbContextOptionsBuilderHelper _opitonsBuilder;
 
+        //represents the collection StorePickupPoint entities in the context
         private DbSet<StorePickupPoint> StorePickupPoint { get; set; }
 
         #endregion
@@ -30,11 +31,19 @@ namespace Nop.Plugin.Pickup.PickupInStore.Data
 
         #region Methods
 
+        /// <summary>
+        /// Generate a script to create all tables for the current model
+        /// </summary>
+        /// <returns>A SQL script</returns>
         public string GenerateCreateScript()
         {
             return Database.GenerateCreateScript();
         }
 
+        /// <summary>
+        /// Configure db context options to use database provider.
+        /// </summary>
+        /// <param name="optionsBuilder">Database context options builder</param>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var nopConfig = EngineContext.Current.Resolve<NopConfig>();

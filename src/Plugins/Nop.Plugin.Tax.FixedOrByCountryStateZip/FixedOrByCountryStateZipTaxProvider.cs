@@ -2,8 +2,11 @@
 using System.Linq;
 using Nop.Core;
 using Nop.Core.Caching;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Nop.Data;
 using Nop.Plugin.Tax.FixedOrByCountryStateZip.Data;
+using Nop.Plugin.Tax.FixedOrByCountryStateZip.Domain;
 using Nop.Plugin.Tax.FixedOrByCountryStateZip.Infrastructure.Cache;
 using Nop.Plugin.Tax.FixedOrByCountryStateZip.Services;
 using Nop.Services.Configuration;
@@ -22,6 +25,7 @@ namespace Nop.Plugin.Tax.FixedOrByCountryStateZip
         private readonly CountryStateZipObjectContext _objectContext;
         private readonly FixedOrByCountryStateZipTaxSettings _countryStateZipSettings;
         private readonly ICountryStateZipService _taxRateService;
+        private readonly IDbContext _dbContext;
         private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
         private readonly IStaticCacheManager _cacheManager;
@@ -32,18 +36,18 @@ namespace Nop.Plugin.Tax.FixedOrByCountryStateZip
 
         #region Ctor
 
-        public FixedOrByCountryStateZipTaxProvider(CountryStateZipObjectContext objectContext,
-            FixedOrByCountryStateZipTaxSettings countryStateZipSettings,
+        public FixedOrByCountryStateZipTaxProvider(FixedOrByCountryStateZipTaxSettings countryStateZipSettings,
             ICountryStateZipService taxRateService,
+            IDbContext dbContext,
             ILocalizationService localizationService,
             ISettingService settingService,
             IStaticCacheManager cacheManager,
             ITaxCategoryService taxCategoryService,
             IWebHelper webHelper)
         {
-            this._objectContext = objectContext;
             this._countryStateZipSettings = countryStateZipSettings;
             this._taxRateService = taxRateService;
+            this._dbContext = dbContext;
             this._localizationService = localizationService;
             this._settingService = settingService;
             this._cacheManager = cacheManager;
@@ -133,7 +137,15 @@ namespace Nop.Plugin.Tax.FixedOrByCountryStateZip
         public override void Install()
         {
             //database objects
-            _objectContext.Install();
+            if (!_dbContext.TableExists(nameof(TaxRate)))
+            {
+                var builder = EngineContext.Current.Resolve<IDbContextOptionsBuilderHelper>();
+                var _objectContext = new CountryStateZipObjectContext(builder);
+                var str = _objectContext.GenerateCreateScript();
+                _dbContext.ExecuteSqlScript(str);
+
+                _dbContext.SaveChanges();
+            }
 
             //settings
             _settingService.SaveSetting(new FixedOrByCountryStateZipTaxSettings());
@@ -176,7 +188,7 @@ namespace Nop.Plugin.Tax.FixedOrByCountryStateZip
             _settingService.DeleteSettings(fixedRates);
 
             //database objects
-            _objectContext.Uninstall();
+            _dbContext.DropTable(nameof(TaxRate));
 
             //locales
             _localizationService.DeletePluginLocaleResource("Plugins.Tax.FixedOrByCountryStateZip.Fixed");
