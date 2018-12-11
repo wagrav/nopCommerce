@@ -101,5 +101,15 @@ namespace Nop.Core.Configuration
         /// By default the cookie-based TempData provider is used to store TempData in cookies.
         /// </summary>
         public bool UseSessionStateTempDataProvider { get; set; }
+
+        /// <summary>
+        /// Gets or sets value for whether to disable markup minification
+        /// </summary>
+        public bool DisableMinification { get; set; }
+
+        /// <summary>
+        /// Gets or sets value for whether to disable HTTP compression of content
+        /// </summary>
+        public bool DisableCompression { get; set; }
     }
 }

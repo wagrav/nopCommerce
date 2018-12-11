@@ -241,7 +241,7 @@ set @resources='
   </LocaleResource>
   <LocaleResource Name="Checkout.Addresses.Invalid">
     <Value>You have {0} invalid address(es)</Value>
-  </LocaleResource>  
+  </LocaleResource>
 </Language>
 '
 
