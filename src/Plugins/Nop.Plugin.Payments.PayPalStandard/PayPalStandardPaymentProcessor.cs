@@ -106,7 +106,7 @@ namespace Nop.Plugin.Payments.PayPalStandard
         /// <returns>Result</returns>
         public bool GetPdtDetails(string tx, out Dictionary<string, string> values, out string response)
         {
-            var req = (HttpWebRequest)WebRequest.Create(GetPaypalUrl());
+            var req = _webHelper.CreateHttpWebRequest(GetPaypalUrl());
             req.Method = WebRequestMethods.Http.Post;
             req.ContentType = MimeTypes.ApplicationXWwwFormUrlencoded;
             //now PayPal requires user-agent. otherwise, we can get 403 error
@@ -150,7 +150,7 @@ namespace Nop.Plugin.Payments.PayPalStandard
         /// <returns>Result</returns>
         public bool VerifyIpn(string formString, out Dictionary<string, string> values)
         {
-            var req = (HttpWebRequest)WebRequest.Create(GetIpnPaypalUrl());
+            var req = _webHelper.CreateHttpWebRequest(GetIpnPaypalUrl());
             req.Method = WebRequestMethods.Http.Post;
             req.ContentType = MimeTypes.ApplicationXWwwFormUrlencoded;
             //now PayPal requires user-agent. otherwise, we can get 403 error

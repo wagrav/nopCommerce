@@ -465,7 +465,7 @@ namespace Nop.Plugin.Shipping.UPS
         private string DoRequest(string url, string requestString)
         {
             var bytes = Encoding.ASCII.GetBytes(requestString);
-            var request = (HttpWebRequest)WebRequest.Create(url);
+            var request = _webHelper.CreateHttpWebRequest(url);
             request.Method = WebRequestMethods.Http.Post;
             request.ContentType = MimeTypes.ApplicationXWwwFormUrlencoded;
             request.ContentLength = bytes.Length;

@@ -1,8 +1,8 @@
 ﻿//Contributor: https://www.codeproject.com/Articles/493455/Server-side-Google-Analytics-Transactions
 
 using System;
-using System.Net.Http;
 using Nop.Core;
+using Nop.Core.Infrastructure;
 
 namespace Nop.Plugin.Widgets.GoogleAnalytics.Api
 {
@@ -25,7 +25,7 @@ namespace Nop.Plugin.Widgets.GoogleAnalytics.Api
         private int? _domainHash;
 
         #endregion
-        
+
         #region Utilities
 
         private async void FireRequest(string url)
@@ -34,7 +34,8 @@ namespace Nop.Plugin.Widgets.GoogleAnalytics.Api
             {
                 _requestCount++;
 
-                var httpClient = new HttpClient();
+                var _webHelper = EngineContext.Current.Resolve<IWebHelper>();
+                var httpClient = _webHelper.CreateHttpClient();
                 try
                 {
                     // we don't need the response so this is the end of the request

@@ -111,16 +111,19 @@ namespace Nop.Web.Areas.Admin.Factories
                     _adminAreaSettings.HideAdvertisementsOnAdminArea,
                     _webHelper.GetStoreLocation()).ToLowerInvariant();
 
-                //create request
-                var request = WebRequest.Create(nopCommerceNewsUrl);
+                var httpClient = _webHelper.CreateHttpClient();
+                httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
 
-                //specify request timeout
-                request.Timeout = 3000;
+                var taskResult = httpClient.GetAsync(nopCommerceNewsUrl);
+                taskResult.Wait();
+                var response = taskResult.Result;
+                response.EnsureSuccessStatusCode();
+                var taskString = response.Content.ReadAsStreamAsync();
+                taskString.Wait();
 
                 //try to get nopCommerce news RSS feed
-                using (var response = request.GetResponse())
-                    using (var reader = XmlReader.Create(response.GetResponseStream()))
-                        return RssFeed.Load(reader);
+                using (var reader = XmlReader.Create(taskString.Result))
+                    return RssFeed.Load(reader);
             });
 
             for (var i = 0; i < rssData.Items.Count; i++)

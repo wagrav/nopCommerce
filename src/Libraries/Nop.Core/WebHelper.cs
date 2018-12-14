@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Http.Features;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
+using Nop.Core.Domain.Security;
 using Nop.Core.Http;
 using Nop.Core.Infrastructure;
 
@@ -91,6 +93,37 @@ namespace Nop.Core
             {
                 return false;
             }
+        }
+
+
+        private WebProxy GetWebProxy()
+        {
+            var proxySettings = EngineContext.Current.Resolve<ProxySettings>();
+
+            var proxyAddress = $"{proxySettings.Address}:{proxySettings.Port}";
+
+            var webProxy = new WebProxy(proxyAddress)
+            {
+                BypassProxyOnLocal = proxySettings.BypassOnLocal,
+            };
+
+            if (string.IsNullOrEmpty(proxySettings.UserName) & string.IsNullOrEmpty(proxySettings.Password))
+            {
+                webProxy.UseDefaultCredentials = true;
+                webProxy.Credentials = CredentialCache.DefaultCredentials;
+            }
+            else
+            {
+                webProxy.UseDefaultCredentials = false;
+                webProxy.Credentials = new NetworkCredential
+                {
+                    UserName = proxySettings.UserName,
+                    Password = proxySettings.Password
+                };
+            }
+
+            return webProxy;
+
         }
 
         #endregion
@@ -473,6 +506,77 @@ namespace Nop.Core
 
             return rawUrl;
         }
+
+        /// <summary>
+        /// Get HTTP client
+        /// </summary>
+        public virtual HttpClient CreateHttpClient()
+        {
+            var proxySettings = EngineContext.Current.Resolve<ProxySettings>();
+
+            if (!proxySettings.Enabled)
+            {
+                return new HttpClient();
+            }
+
+            var webProxy = GetWebProxy();
+
+            var handler = new HttpClientHandler()
+            {
+                UseDefaultCredentials = webProxy.UseDefaultCredentials,
+                Proxy = webProxy,
+                PreAuthenticate = proxySettings.PreAuthenticate,
+            };
+
+            return new HttpClient(handler);
+        }
+
+        /// <summary>
+        /// Get HTTP web request
+        /// </summary>
+        /// <param name="requestUri">Request string</param>
+        /// <returns></returns>
+        public virtual HttpWebRequest CreateHttpWebRequest(string requestUri)
+        {
+            var proxySettings = EngineContext.Current.Resolve<ProxySettings>();
+
+            var res = (HttpWebRequest)WebRequest.Create(requestUri);
+
+            if (!proxySettings.Enabled)
+            {
+                return res;
+            }
+
+            res.Proxy = GetWebProxy();
+
+            return res;
+        }
+
+        /// <summary>
+        /// Returns true if proxy settings are valid.
+        /// </summary>
+        /// <returns>Returns true if proxy settings are valid.</returns>
+        public bool IsProxySettingsValid()
+        {
+            var proxySettings = EngineContext.Current.Resolve<ProxySettings>();
+
+            try
+            {
+                var ip = IPAddress.Parse(proxySettings.Address);
+
+                var port = Convert.ToUInt16(proxySettings.Port);
+
+                var webProxy = GetWebProxy();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+        }
+
 
         #endregion
     }

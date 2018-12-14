@@ -21,8 +21,9 @@ namespace Nop.Plugin.Payments.Square.Services
     public class SquarePaymentManager
     {
         #region Fields
-        
+
         private readonly ILogger _logger;
+        private readonly IWebHelper _webHelper;
         private readonly IWorkContext _workContext;
         private readonly SquarePaymentSettings _squarePaymentSettings;
 
@@ -31,10 +32,12 @@ namespace Nop.Plugin.Payments.Square.Services
         #region Ctor
 
         public SquarePaymentManager(ILogger logger,
+            IWebHelper webHelper,
             IWorkContext workContext,
             SquarePaymentSettings squarePaymentSettings)
         {
             this._logger = logger;
+            this._webHelper = webHelper;
             this._workContext = workContext;
             this._squarePaymentSettings = squarePaymentSettings;
         }
@@ -598,7 +601,7 @@ namespace Nop.Plugin.Payments.Square.Services
 
             //create web request
             var serviceUrl = $"{GetOAuthServiceUrl()}/token";
-            var request = (HttpWebRequest)WebRequest.Create(serviceUrl);
+            var request = _webHelper.CreateHttpWebRequest(serviceUrl);
             request.Method = WebRequestMethods.Http.Post;
             request.Accept = "application/json";
             request.ContentType = "application/json";

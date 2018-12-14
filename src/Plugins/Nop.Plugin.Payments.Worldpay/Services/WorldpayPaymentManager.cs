@@ -20,6 +20,7 @@ namespace Nop.Plugin.Payments.Worldpay.Services
         #region Fields
 
         private readonly ILogger _logger;
+        private readonly IWebHelper _webHelper;
         private readonly IWorkContext _workContext;
         private readonly WorldpayPaymentSettings _worldpayPaymentSettings;
 
@@ -28,10 +29,12 @@ namespace Nop.Plugin.Payments.Worldpay.Services
         #region Ctor
 
         public WorldpayPaymentManager(ILogger logger,
+            IWebHelper webHelper,
             IWorkContext workContext,
             WorldpayPaymentSettings worldpayPaymentSettings)
         {
             this._logger = logger;
+            this._webHelper = webHelper;
             this._workContext = workContext;
             this._worldpayPaymentSettings = worldpayPaymentSettings;
         }
@@ -103,7 +106,7 @@ namespace Nop.Plugin.Payments.Worldpay.Services
         {
             //create web request
             var serviceUrl = $"{GetServiceUrl()}/{worldpayRequest.GetRequestUrl()}";
-            var request = (HttpWebRequest)WebRequest.Create(serviceUrl);
+            var request = _webHelper.CreateHttpWebRequest(serviceUrl);
             request.Method = worldpayRequest.GetRequestMethod();
             request.UserAgent = WorldpayPaymentDefaults.UserAgent;
             request.Accept = "application/json";

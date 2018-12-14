@@ -305,6 +305,15 @@ set @resources='
   <LocaleResource Name="Admin.Configuration.Plugins.Uninstalled">
     <Value></Value>
   </LocaleResource>   
+  <LocaleResource Name="Admin.System.Warnings.ProxyConfiguraiton.Failed">
+    <Value>Proxy configuration is failed</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.System.Warnings.ProxyConfiguraiton.NotEnabled">
+    <Value>Proxy is not enabled</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.System.Warnings.ProxyConfiguraiton.OK">
+    <Value>Proxy configuration is OK</Value>
+  </LocaleResource> 
 </Language>'
 
 CREATE TABLE #LocaleStringResourceTmp
@@ -1090,11 +1099,67 @@ BEGIN
 END
 GO
 
-  --new setting
+--new setting
 IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'commonsettings.faviconandappiconsheadcode')
 BEGIN
     INSERT [Setting] ([Name], [Value], [StoreId])
     VALUES (N'commonsettings.faviconandappiconsheadcode', N'<link rel="shortcut icon" href="/favicon.ico"/>', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.enabled')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxyenabled', N'False', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.bypassonlocal')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxybypassproxyonlocal', N'True', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.address')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxyaddress', N'', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.port')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxyport', N'', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.username')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxyusername', N'', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.password')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxypassword', N'', 0)
+END
+GO
+
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'proxysettings.preauthenticate')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'proxysettings.proxypreauthenticate', N'True', 0)
 END
 GO
 

@@ -18,16 +18,18 @@ namespace Nop.Plugin.ExchangeRate.EcbExchange
 
         private readonly ILocalizationService _localizationService;
         private readonly ILogger _logger;
+        private readonly IWebHelper _webHelper;
 
         #endregion
 
         #region Ctor
 
         public EcbExchangeRateProvider(ILocalizationService localizationService,
-            ILogger logger)
+            ILogger logger, IWebHelper webHelper)
         {
             this._localizationService = localizationService;
             this._logger = logger;
+            this._webHelper = webHelper;
         }
 
         #endregion
@@ -56,7 +58,7 @@ namespace Nop.Plugin.ExchangeRate.EcbExchange
             };
 
             //get exchange rates to euro from European Central Bank
-            var request = (HttpWebRequest)WebRequest.Create("http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml");
+            var request = _webHelper.CreateHttpWebRequest("http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml");
             try
             {
                 using (var response = request.GetResponse())

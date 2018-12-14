@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http;
+using System.Net;
+using System.Net.Http;
 
 namespace Nop.Core
 {
@@ -114,5 +116,24 @@ namespace Nop.Core
         /// <param name="request">HTTP request</param>
         /// <returns>Raw URL</returns>
         string GetRawUrl(HttpRequest request);
+
+        /// <summary>
+        /// Get HTTP client
+        /// </summary>
+        HttpClient CreateHttpClient();
+
+        /// <summary>
+        /// Get HTTP web request
+        /// </summary>
+        /// <param name="requestUri">Request string</param>
+        /// <returns></returns>
+        HttpWebRequest CreateHttpWebRequest(string requestUri);
+
+        /// <summary>
+        /// Returns true if proxy settings are valid.
+        /// </summary>
+        /// <returns>Returns true if proxy settings are valid.</returns>
+        bool IsProxySettingsValid();
+
     }
 }

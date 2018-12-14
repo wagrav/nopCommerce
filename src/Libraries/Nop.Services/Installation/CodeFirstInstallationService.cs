@@ -6622,6 +6622,17 @@ namespace Nop.Services.Installation
             {
                 UsePopupNotifications = false
             });
+
+            settingService.SaveSetting(new ProxySettings
+            {
+                Enabled = false,
+                BypassOnLocal = true,
+                Address = "",
+                Port = "",
+                UserName = "",
+                Password = "",
+                PreAuthenticate = true,
+            });
         }
 
         protected virtual void InstallCheckoutAttributes()

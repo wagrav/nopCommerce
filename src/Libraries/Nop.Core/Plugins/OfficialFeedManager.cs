@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,20 +21,21 @@ namespace Nop.Core.Plugins
 
         private static XmlDocument GetDocument(string feedQuery, params object[] args)
         {
-            var request = WebRequest.Create(MakeUrl(feedQuery, args));
-            request.Timeout = 5000;
-            using (var response = request.GetResponse())
-            {
-                using (var dataStream = response.GetResponseStream())
-                using (var reader = new StreamReader(dataStream))
-                {
-                    var responseFromServer = reader.ReadToEnd();
+            var _webHelper = Infrastructure.EngineContext.Current.Resolve<IWebHelper>();
 
-                    var xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(responseFromServer);
-                    return xmlDoc;
-                }
-            }
+            var httpClient = _webHelper.CreateHttpClient();
+            httpClient.Timeout = TimeSpan.FromMilliseconds(5000);
+
+            var taskResult = httpClient.GetAsync(MakeUrl(feedQuery, args));
+            taskResult.Wait();
+            var response = taskResult.Result;
+            response.EnsureSuccessStatusCode();
+            var taskString = response.Content.ReadAsStringAsync();
+            taskString.Wait();
+
+            var xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(taskString.Result);
+            return xmlDoc;
         }
 
         /// <summary>
