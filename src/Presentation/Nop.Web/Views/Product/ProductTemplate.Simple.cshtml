@@ -70,7 +70,7 @@
                         @if (!string.IsNullOrEmpty(Model.ShortDescription))
                         {
                             <div class="short-description">
-                                @Html.Raw(Model.ShortDescription)
+                                @Html.Raw(Html.Encode(Model.ShortDescription))
                             </div>
                         }
                         @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.ProductDetailsOverviewTop, additionalData = Model })
