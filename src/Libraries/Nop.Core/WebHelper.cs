@@ -190,7 +190,7 @@ namespace Nop.Core
             if (lowercaseUrl)
                 pageUrl = pageUrl.ToLowerInvariant();
 
-            return pageUrl;
+            return WebUtility.UrlEncode(pageUrl);
         }
 
         /// <summary>
@@ -471,7 +471,7 @@ namespace Nop.Core
             if (string.IsNullOrEmpty(rawUrl))
                 rawUrl = $"{request.PathBase}{request.Path}{request.QueryString}";
 
-            return rawUrl;
+            return WebUtility.UrlEncode(rawUrl);
         }
 
         #endregion
