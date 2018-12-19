@@ -52,7 +52,7 @@ namespace Nop.Services.Localization
         /// <returns>Result</returns>
         public static string RemoveApplicationPathFromRawUrl(this string rawUrl, PathString pathBase)
         {
-            new PathString(rawUrl).StartsWithSegments(pathBase, out PathString result);
+            new PathString(WebUtility.UrlDecode(rawUrl)).StartsWithSegments(pathBase, out PathString result);
             return WebUtility.UrlDecode(result);
         }
 
