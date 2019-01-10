@@ -118,8 +118,7 @@
                 $(this).siblings('.top-menu.mobile').slideToggle('slow');
             });
 
-            topMenuMobile.init('@Url.Action("GetCatalogRoot", "Catalog")', '@Url.Action("GetCatalogSubCategories", "Catalog")', 'ul.top-menu.mobile');
-            topMenu.init('@Url.Action("GetCatalogRoot", "Catalog")', '@Url.Action("GetCatalogSubCategories", "Catalog")', 'div.header-menu');
+            mainMenu.init('@Url.Action("GetCatalogRoot", "Catalog")', '@Url.Action("GetCatalogSubCategories", "Catalog")', 'ul.top-menu.notmobile', 'ul.top-menu.mobile');
         });
         </script>
 

@@ -729,16 +729,16 @@ namespace Nop.Web.Factories
 
             return _cacheManager.Get(cacheKey, () => {
 
-                var cats = PrepareCategorySimpleModels();
+                var categories = PrepareCategorySimpleModels();
 
-                XmlSerializer xsSubmit = new XmlSerializer(typeof(List<CategorySimpleModel>));
+                var xsSubmit = new XmlSerializer(typeof(List<CategorySimpleModel>));
 
-                using (var sww = new StringWriter())
+                using (var strWriter = new StringWriter())
                 {
-                    using (XmlWriter writer = XmlWriter.Create(sww))
+                    using (var writer = XmlWriter.Create(strWriter))
                     {
-                        xsSubmit.Serialize(writer, cats);
-                        var xml = sww.ToString();
+                        xsSubmit.Serialize(writer, categories);
+                        var xml = strWriter.ToString();
 
                         return XDocument.Parse(xml);
                     }
