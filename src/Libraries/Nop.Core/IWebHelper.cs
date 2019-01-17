@@ -135,5 +135,11 @@ namespace Nop.Core
         /// <returns>Returns true if proxy settings are valid.</returns>
         bool IsProxySettingsValid();
 
+        /// <summary>
+        /// Returns proxy settings
+        /// </summary>
+        /// <returns>Returns proxy settings or null if proxy not enabled</returns>
+        WebProxy GetProxyParameters();
+
     }
 }

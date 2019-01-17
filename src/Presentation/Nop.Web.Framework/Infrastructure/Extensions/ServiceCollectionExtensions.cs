@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
@@ -243,6 +244,9 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         /// <returns>A builder for configuring MVC services</returns>
         public static IMvcBuilder AddNopMvc(this IServiceCollection services)
         {
+            // add http client factory
+            services.AddHttpClienFactory();
+
             //add basic MVC feature
             var mvcBuilder = services.AddMvc();
 
@@ -338,5 +342,17 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
                     EngineContext.Current.Resolve<IPermissionService>().Authorize(StandardPermissionProvider.AccessAdminPanel);
             }).AddEntityFramework();
         }
-    }
+
+        /// <summary>
+        /// Add and configure MiniProfiler service
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddHttpClienFactory(this IServiceCollection services)
+        {
+                services.AddHttpClient(NopHttpDefaults.HttpCLientName).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                {
+                    Proxy = EngineContext.Current.Resolve<IWebHelper>().GetProxyParameters()
+                });
+         }
+            }
 }

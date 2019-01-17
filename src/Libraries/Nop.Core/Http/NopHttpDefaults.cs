@@ -35,5 +35,10 @@ namespace Nop.Core.Http
         /// Gets the name of X-FORWARDED-FOR header
         /// </summary>
         public static string XForwardedForHeader => "X-FORWARDED-FOR";
+
+        /// <summary>
+        /// Gets the name of default HttpClient name
+        /// </summary>
+        public static string HttpCLientName => "Default";
     }
 }

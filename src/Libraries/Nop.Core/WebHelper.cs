@@ -577,6 +577,24 @@ namespace Nop.Core
 
         }
 
+        /// <summary>
+        /// Returns proxy settings
+        /// </summary>
+        /// <returns>Returns proxy settings or null if proxy not enabled</returns>
+        public virtual WebProxy GetProxyParameters()
+        {
+            var proxySettings = EngineContext.Current.Resolve<ProxySettings>();
+
+            if (!proxySettings.Enabled || !IsProxySettingsValid())
+            {
+                return null;
+            }
+            else
+            {
+                return GetWebProxy();
+            }
+        }
+
 
         #endregion
     }

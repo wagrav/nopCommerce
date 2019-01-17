@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Nop.Core.Http;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Xml;
 
 namespace Nop.Core.Plugins
@@ -21,9 +22,10 @@ namespace Nop.Core.Plugins
 
         private static XmlDocument GetDocument(string feedQuery, params object[] args)
         {
-            var _webHelper = Infrastructure.EngineContext.Current.Resolve<IWebHelper>();
+            var httpClienFactory = Infrastructure.EngineContext.Current.Resolve<IHttpClientFactory>();
 
-            var httpClient = _webHelper.CreateHttpClient();
+            var httpClient = httpClienFactory.CreateClient(NopHttpDefaults.HttpCLientName);
+
             httpClient.Timeout = TimeSpan.FromMilliseconds(5000);
 
             var taskResult = httpClient.GetAsync(MakeUrl(feedQuery, args));

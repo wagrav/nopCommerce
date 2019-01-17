@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Domain.Common;
+using Nop.Core.Http;
+using Nop.Core.Infrastructure;
 using Nop.Services.Configuration;
 using Nop.Web.Areas.Admin.Infrastructure.Cache;
 using Nop.Web.Areas.Admin.Models.Home;
@@ -111,7 +114,10 @@ namespace Nop.Web.Areas.Admin.Factories
                     _adminAreaSettings.HideAdvertisementsOnAdminArea,
                     _webHelper.GetStoreLocation()).ToLowerInvariant();
 
-                var httpClient = _webHelper.CreateHttpClient();
+                var httpClienFactory = EngineContext.Current.Resolve<IHttpClientFactory>();
+
+                var httpClient = httpClienFactory.CreateClient(NopHttpDefaults.HttpCLientName);
+
                 httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
 
                 var taskResult = httpClient.GetAsync(nopCommerceNewsUrl);
