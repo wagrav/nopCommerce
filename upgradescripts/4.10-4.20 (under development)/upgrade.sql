@@ -304,7 +304,31 @@ set @resources='
   </LocaleResource>  
   <LocaleResource Name="Admin.Configuration.Plugins.Uninstalled">
     <Value></Value>
-  </LocaleResource>   
+  </LocaleResource>  
+  <LocaleResource Name="Admin.Configuration.Settings.Gdpr.LogUserProfileChanges">
+    <Value>Log user profile changes</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Gdpr.LogUserProfileChanges.Hint">
+    <Value>Check to log user profile changes (if this feature is enabled in your store).</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.CompanyChanged">
+    <Value>User changed company name</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.DateOfBirthChanged">
+    <Value>User changed first date of birth</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.EmailChanged">
+    <Value>User changed email</Value>
+  </LocaleResource>
+    <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.FirstNameChanged">
+    <Value>User changed first name</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.GenderChanged">
+    <Value>User changed gender</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Gdpr.GdprRequestType.LastNameChanged">
+    <Value>User changed last name</Value>
+  </LocaleResource>
 </Language>'
 
 CREATE TABLE #LocaleStringResourceTmp
@@ -1109,3 +1133,10 @@ BEGIN
 END
 GO
 
+--new setting
+IF NOT EXISTS (SELECT 1 FROM [Setting] WHERE [Name] = N'gdprsettings.loguserprofilechanges')
+BEGIN
+    INSERT [Setting] ([Name], [Value], [StoreId])
+    VALUES (N'gdprsettings.loguserprofilechanges', N'True', 0)
+END
+GO

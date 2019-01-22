@@ -951,7 +951,13 @@ namespace Nop.Web.Controllers
             if (!_workContext.CurrentCustomer.IsRegistered())
                 return Challenge();
 
+            var oldCustomerModel = new CustomerInfoModel();
+
             var customer = _workContext.CurrentCustomer;
+
+            //get customer info model before changes for gdpr log
+            if (_gdprSettings.GdprEnabled & _gdprSettings.LogUserProfileChanges)
+                oldCustomerModel = _customerModelFactory.PrepareCustomerInfoModel(oldCustomerModel, customer, false);
 
             //custom customer attributes
             var customerAttributesXml = ParseCustomCustomerAttributes(model.Form);
@@ -1113,6 +1119,7 @@ namespace Nop.Web.Controllers
                     //GDPR
                     if (_gdprSettings.GdprEnabled)
                     {
+                        //consents
                         var consents = _gdprService.GetAllConsents().Where(consent => consent.DisplayOnCustomerInfoPage).ToList();
                         foreach (var consent in consents)
                         {
@@ -1135,6 +1142,28 @@ namespace Nop.Web.Controllers
                                     _gdprService.InsertLog(customer, consent.Id, GdprRequestType.ConsentDisagree, consent.Message);
                                 }
                             }
+                        }
+
+                        //user profile changes
+                        if (_gdprSettings.LogUserProfileChanges)
+                        {
+                            if (_customerSettings.GenderEnabled & (oldCustomerModel.Gender != model.Gender))
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.GenderChanged, model.Gender);
+
+                            if (oldCustomerModel.FirstName != model.FirstName)
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.FirstNameChanged, model.FirstName);
+
+                            if (oldCustomerModel.LastName != model.LastName)
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.LastNameChanged, model.LastName);
+
+                            if (_customerSettings.DateOfBirthEnabled & (oldCustomerModel.ParseDateOfBirth() != model.ParseDateOfBirth()))
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.DateOfBirthChanged, model.ParseDateOfBirth().ToString());
+
+                            if (oldCustomerModel.Email != model.Email)
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.EmailChanged, model.Email);
+
+                            if (_customerSettings.CompanyEnabled & (oldCustomerModel.Company != model.Company))
+                                _gdprService.InsertLog(customer, 0, GdprRequestType.CompanyChanged, model.Company);
                         }
                     }
 
