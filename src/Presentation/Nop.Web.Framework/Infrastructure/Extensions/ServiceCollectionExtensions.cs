@@ -17,6 +17,7 @@ using Nop.Core.Domain;
 using Nop.Core.Domain.Security;
 using Nop.Core.Http;
 using Nop.Core.Infrastructure;
+using Nop.Core.Redis;
 using Nop.Data;
 using Nop.Services.Authentication;
 using Nop.Services.Authentication.External;
@@ -45,13 +46,11 @@ namespace Nop.Web.Framework.Infrastructure.Extensions
         /// <returns>Configured service provider</returns>
         public static IServiceProvider ConfigureApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
-            //add NopConfig configuration parameters
-            services.ConfigureStartupConfig<NopConfig>(configuration.GetSection("Nop"));
             //add hosting configuration parameters
             services.ConfigureStartupConfig<HostingConfig>(configuration.GetSection("Hosting"));
             //add accessor to HttpContext
             services.AddHttpContextAccessor();
-
+            
             //create, initialize and configure the engine
             var engine = EngineContext.Create();
             engine.Initialize(services);

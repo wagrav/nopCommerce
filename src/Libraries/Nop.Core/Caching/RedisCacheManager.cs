@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Nop.Core.Configuration;
+using Nop.Core.Redis;
 using StackExchange.Redis;
 
 namespace Nop.Core.Caching
@@ -17,7 +18,6 @@ namespace Nop.Core.Caching
 
         private readonly ICacheManager _perRequestCacheManager;
         private readonly IRedisConnectionWrapper _connectionWrapper;
-
         private readonly IDatabase _db;
 
         #endregion
@@ -36,7 +36,7 @@ namespace Nop.Core.Caching
             // ConnectionMultiplexer.Connect should only be called once and shared between callers
             this._connectionWrapper = connectionWrapper;
 
-            this._db = _connectionWrapper.GetDatabase();
+            this._db = _connectionWrapper.GetDatabase(RedisDatabaseNumber.Cache);
         }
 
         #endregion

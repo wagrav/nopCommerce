@@ -42,6 +42,10 @@ namespace Nop.Core.Configuration
         /// Gets or sets a value indicating whether the data protection system should be configured to persist keys in the Redis database
         /// </summary>
         public bool PersistDataProtectionKeysToRedis { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether we should use Redis server for store the plugins info (instead of default file)
+        /// </summary>
+        public bool UseRedisToPluginsInfo { get; set; }
 
         /// <summary>
         /// Gets or sets path to database with user agent strings
