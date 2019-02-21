@@ -140,7 +140,12 @@ ul.common-list {
 
 /*COLLAPSIBLE BLOCKS*/
 .panel.collapsible-panel {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    border-color: #3c8dbc;
+}
+
+.panel.collapsible-panel textarea {
+    resize: vertical;
 }
 
 .panel.collapsible-panel .sub-panel {
@@ -153,11 +158,37 @@ ul.common-list {
     cursor: pointer;
 }
 
-.panel.collapsible-panel .panel-heading i {
+.panel.collapsible-panel >.panel-heading {
+    background-color: #3c8dbc;
+    color: #fff;
+    border-color: #3c8dbc;
+    padding-left: 45px;
+}
+
+.panel.collapsible-panel >.panel-heading span {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.panel.collapsible-panel .panel-heading i.toggle-icon {
     position: absolute;
     right: 5px;
     top: 14px;
 }
+
+.panel.collapsible-panel .panel-heading div.icon-container {
+    width: 45px;
+    position: absolute;
+    left: 0;
+    top: 12px;
+    text-align: center;
+}
+
+.panel.collapsible-panel .panel-heading i.panel-icon {
+    font-size: 18px;
+    padding-right: 0 !important;
+}
+
 .panel.collapsible-panel .panel-container.collapsed {
     display: none;
 }
